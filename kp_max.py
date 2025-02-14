@@ -60,7 +60,7 @@ for i in i_frame:
     annots.append(np.load(annots_name)[:,1:])
 
 h, w = img.shape[:2]
-ref_hist =  _hist(imgs)
+ref_hist = calc_ref_hist(imgs)
 
 kps = []
 descs = []
@@ -160,7 +160,6 @@ cmd_2 = f"rm {avi_name}"
 os.system(cmd_2)
 
 
-truc += 2
 end_frame = 2_000
 n_sample = 1
 video_out = 'pitch.mp4'

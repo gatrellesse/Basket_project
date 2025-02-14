@@ -50,6 +50,7 @@ plt.xlim(0,ul),
 homogs_ref = np.load('Hs_supt1.npy')[:,2]
 homogs = np.load('Hs_supt1.npy')[:,2]
 
+#5 Fictional players
 players = np.array([[w / 4, h / 4], [3 * w / 4 , h / 4],
                     [w / 4, 3 * h / 4], [3 * w / 4 , 3 * h / 4],
                     [w / 2, h / 2]])
@@ -66,6 +67,7 @@ homogs[629] = homogs[[628,630]].mean(axis=0)
 n_frame = len(homogs)
 idxs = np.arange(n_frame)
 from scipy.interpolate import make_interp_spline
+#Do an interpolation between homographies-->Smoother set of transformations
 spl = make_interp_spline(idxs[::2], homogs[::2], k=1, axis=0)  # k=1: linear
 # for k=1: bc_type can only be None (otherwise bc_type="natural")
 homogs = spl(idxs)
@@ -91,3 +93,4 @@ traj_ref = np.array(traj_ref)
 _ = plt.hist(err_max, bins=100)
 #plt.xlim(0,0.2)
 plt.xlabel('écart en m')
+plt.show()
