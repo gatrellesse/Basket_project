@@ -60,7 +60,7 @@ for i in i_frame:
     annots.append(np.load(annots_name)[:,1:])
 
 h, w = img.shape[:2]
-ref_hist = calc_ref_hist(imgs)
+ref_hist =  _hist(imgs)
 
 kps = []
 descs = []
