@@ -23,6 +23,7 @@ Hs_name = 'Hs2.npy'
 video_out = 'pitch2.mp4'
 size_ratio = 2
 
+#Calculates the histogrames
 def calc_ref_hist(imgs):
     return np.hstack([cv2.calcHist([img], [0], None, [256], [0, 256]) for img in imgs])
 
@@ -39,6 +40,8 @@ def apply_sift(img, size_ratio=1):
         img = cv2.resize(img, (w//size_ratio, h//size_ratio))
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     # find the keypoints and descriptors with SIFT
+    # keypoints = points coords
+    # descriptors = feature vectors, matrix containing the info around the kp(gradient, edges, etc..)
     sift = cv2.SIFT_create()
     kp, desc = sift.detectAndCompute(gray,None)
     return kp, desc
@@ -49,6 +52,7 @@ search_params = dict(checks = 50)
  
 imgs=[]
 annots = []
+#loas all images and its annotations
 for i in i_frame:
     annots_name = f"annots_{i}.npy"
     img = cv2.imread(f"img_{i}.png")
@@ -60,6 +64,7 @@ ref_hist = calc_ref_hist(imgs)
 
 kps = []
 descs = []
+#Apply sift for all imgs previously annotated
 for img, annot in zip(imgs, annots):
     
     kp, desc = apply_sift(img, size_ratio=size_ratio)
@@ -71,6 +76,7 @@ for img, annot in zip(imgs, annots):
 init_frame = 100_000
 avi_name = 'results.avi'
 video_capture = cv2.VideoCapture()
+#Opening and saving the video from a specific frame
 if video_capture.open( video_in ):
     w, h = int(video_capture.get(cv2.CAP_PROP_FRAME_WIDTH)), int(video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = video_capture.get(cv2.CAP_PROP_FPS)
@@ -97,7 +103,8 @@ if not os.path.exists(Hs_name):
         #frame2 = cv2.resize(frame, (w//2, h//2))
         kp, desc = apply_sift(frame, size_ratio=size_ratio)
         
-       
+        #K-D-tree(3d binary tree) -->Best-bin-first-->priority queu(distance candidate<->query point)
+        #flann-->nearest neighbors to the query point
         flann = cv2.FlannBasedMatcher(index_params, search_params)
         matches = flann.knnMatch(descs[i_match], desc,k=2)
      
@@ -105,18 +112,24 @@ if not os.path.exists(Hs_name):
         good = []
         for m,n in matches:
             if m.distance < 0.7*n.distance:
+                #ratio = distance(m)/distance(n) -->m closest, n second closest
                 good.append(m)
                 
         if len(good)>MIN_MATCH_COUNT:
             src_pts = np.float32([ kps[i_match][m.queryIdx].pt for m in good ]).reshape(-1,1,2)
             dst_pts = np.float32([ kp[m.trainIdx].pt for m in good ]).reshape(-1,1,2)
          
+        #Homography matrix to map SRC-->DST using Random Sample Consensus(RANSAC)
+        #Select candidates images to apply the algo.
+        #https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_feature2d/py_feature_homography/py_feature_homography.html
+
         Mratio, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC,5.0)
         M =  np.diag([size_ratio, size_ratio,1]) @ Mratio @ np.diag([1 / size_ratio, 1 / size_ratio, 1])
         new_pts = cv2.perspectiveTransform(annots[i_match].reshape(-1,1,2), M).squeeze()
         M[2,2] = i_match
         Hs.append(M)
         
+        #Plots the points found by the homography transformation
         for pt in new_pts.astype(np.int16):
             cv2.circle(frame, pt, 10, (0,255,0), -1)
         video_writer.write(frame)
