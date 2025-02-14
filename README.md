@@ -38,7 +38,5 @@ The following steps outline the flow of the process:
 
 ## Requirements
 
-List the required libraries or tools to run this project, such as OpenCV, NumPy, etc.
-
 ```bash
-pip install opencv-python numpy
+pip install opencv-python numpy transformers torch
