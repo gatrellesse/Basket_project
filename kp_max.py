@@ -190,7 +190,10 @@ if video_capture.open( video_in ):
     video_writer = cv2.VideoWriter(avi_name,
                                      cv2.VideoWriter_fourcc(*'MJPG'),
                                      fps_write, (w, h))
-    
+
+#Using the HS interpolated we apply for each point in the image 
+#from the pré annotated images by using perspective transformation
+#It is basically a projective transformation
 for i in range(end_frame):
 
     ret, frame = video_capture.read()
