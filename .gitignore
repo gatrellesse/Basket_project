@@ -1,8 +1,9 @@
 #Ignore mp4 files in the current folder
 *.mp4
 
-#Ignore png files in the current folder
-*.png
+#Ignore png,jpg files in the current folder
+*.png 
+*.jpg
 
 #Ignore odt files in the current folder
 *.odt
