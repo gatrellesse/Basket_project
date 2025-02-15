@@ -10,7 +10,7 @@ The following steps outline the flow of the process:
 
 1. **Pre-annotation of Key Points**  
    Begin by identifying key points in images that will be tracked throughout the process.
-
+   Run Collinear function to make all points collinear
 2. **Calculate Histogram of Image**  
    Use an image’s pixel intensity distribution (histogram) to represent its content.
 
