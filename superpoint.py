@@ -70,7 +70,7 @@ imgs=[]
 annots = []
 annots_idx = []
 for i in i_frame:
-    annots_name = f"annots_{i}.npy"
+    annots_name = f"pts_dict_{i}.npy"
     img = cv2.imread(f"img_{i}.png")
     imgs.append(img)
     annot = np.load(annots_name)
