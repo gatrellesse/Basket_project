@@ -2,10 +2,14 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 
+i_frame = [104700, 104700+75, 104700+75+35]
+i = 2
+img_name = f"img_{i_frame[i]}.png"
+pts_name = f"pts_dict_{i_frame[i]}.npy"
 # Load the .npy file
-data = np.load('pts_dict_104700.npy', allow_pickle=True).item()
+data = np.load(pts_name, allow_pickle=True).item()
 # Load the image
-img = cv2.imread('img_104700.png')
+img = cv2.imread(img_name)
 # Extract points and identities
 pts = data["pts"]
 pts_2 = pts.copy()
@@ -111,5 +115,6 @@ for colPoints in collinearV_Points:
 
 
 # Draw projected collinear points in red
-cv2.imwrite('arrests.jpg', img)
+img_write = 'arrests' + str(i_frame[i]) + '.jpg'
+cv2.imwrite(img_write, img)
 

@@ -74,7 +74,7 @@ def terminate(event):
     
 frame_idx = [1000, 100000, 100170, 170040]
 i_frame = [104700, 104700+75, 104700+75+35]
-i = 0
+i = 2
 img_name = f"img_{i_frame[i]}.png"
 pts_name = f"pts_dict_{i_frame[i]}.npy"
 #pts_dict = f"pts_{i_frame[i]}_b.npy"
