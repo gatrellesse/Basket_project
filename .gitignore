@@ -7,3 +7,4 @@
 
 #Ignore odt files in the current folder
 *.odt
+*.npy
