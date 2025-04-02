@@ -1,213 +1,217 @@
-2#!/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Created on Mon Feb 12 09:21:50 2024
 
-@author: fenaux
+@author:
 """
 
-import os, sys
-
+import os
+import sys
 import numpy as np
+import matplotlib
+matplotlib.use("TkAgg")  # 🔹 Force interactive backend
 import matplotlib.pyplot as plt
 from matplotlib.widgets import RectangleSelector, Button
 from matplotlib.backend_bases import MouseButton
-
 import cv2
 
+# Global variable for ROI selection
+roi = None
 
 def select_roi(eclick, erelease):
-    """
-    Callback for line selection.
-
-    *eclick* and *erelease* are the press and release events.
-    """
-    
+    """ Callback function for selecting a region of interest (ROI). """
     global roi
+
+    if eclick.xdata is None or erelease.xdata is None:
+        print("Invalid selection. Please draw a rectangle within the image area.")
+        return
     
     x1, y1 = eclick.xdata, eclick.ydata
     x2, y2 = erelease.xdata, erelease.ydata
-    #print(f"({x1:3.2f}, {y1:3.2f}) --> ({x2:3.2f}, {y2:3.2f})")
-    #print(f"The buttons you used were: {eclick.button} {erelease.button}")
-    roi = np.int16( [min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2)] )
+
+    roi = np.int16([min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2)])
+    print(f"ROI selected: {roi}")
 
 def button_press_callback(event):
-    'whenever a mouse button is pressed'
+    """ Callback for mouse button press events. """
     global pts_local, image
-    
+
     image_pt = image.copy()
     if event.inaxes is None:
         return
     
     h, w = image.shape[:2]
     ix, iy = event.xdata, event.ydata
-    if ix < 1 or ix > w or iy < 1 or iy > h: # > 1 is a trick to avoid considering click on button
+    if ix < 1 or ix > w or iy < 1 or iy > h:  # Ignore clicks outside the image
         return
+    
     new_pt = np.array([event.xdata, event.ydata]).reshape(1,2)
     
     if event.button is MouseButton.LEFT:
         pts_local = np.append(pts_local, new_pt, axis=0)
-        #new_idx = int(input())
         
-    if event.button is MouseButton.RIGHT:
-        if len(pts_local) > 0:
-            to_delete = np.argmin(np.linalg.norm(pts_local - new_pt, axis=1))
-            pts_local = np.delete(pts_local, to_delete, axis=0)
-    
-    if event.button == 2: return
+    if event.button is MouseButton.RIGHT and len(pts_local) > 0:
+        to_delete = np.argmin(np.linalg.norm(pts_local - new_pt, axis=1))
+        pts_local = np.delete(pts_local, to_delete, axis=0)
 
-    global imgplot, fig
     for pt in pts_local:
-        cv2.circle(image_pt, pt.astype(np.int16), 3, (0,255,0), -1)
+        cv2.circle(image_pt, pt.astype(np.int16), 3, (0, 255, 0), -1)
+    
+    global imgplot, fig
     imgplot.set_data(image_pt)
     fig.canvas.draw_idle()
-    
-    
-def on_close(event):
-    truc = 0
-    
-    
+
 def terminate(event):
+    """ Closes all windows and stops execution. """
     global finished
     finished = True
     plt.close('all')
-    
+
+def show_roi_selection(img):
+    """ Function to handle ROI selection interactively """
+    global roi
+
+    fig, ax = plt.subplots(figsize=(13, 7))
+    ax.imshow(img)
+
+    selector = RectangleSelector(
+        ax, select_roi,
+        useblit=True,
+        button=[1, 3],
+        minspanx=5, minspany=5,
+        spancoords='pixels',
+        interactive=True
+    )
+
+    plt.title("Select ROI and close window to continue")
+
+    # Use blocking `plt.show()` to keep the window open
+    plt.show(block=True)
+
+    if roi is None:
+        print("Error: ROI was not selected. Please restart and try again.")
+        sys.exit(1)
+
+# 🔹 Load Image
 frame_idx = [1000, 100000, 100170, 170040]
 i_frame = [104700, 104700+75, 104700+75+35]
+<<<<<<< HEAD
 i = 2
+=======
+i = 1
+>>>>>>> 69d6912 (feat: atualiza superpoint.py)
 img_name = f"img_{i_frame[i]}.png"
 pts_name = f"pts_dict_{i_frame[i]}.npy"
-#pts_dict = f"pts_{i_frame[i]}_b.npy"
+
+if not os.path.exists(img_name):
+    print(f"Error: Image {img_name} not found.")
+    sys.exit(1)
 
 img = cv2.imread(img_name)
 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 img_ori = img.copy()
 
-#if not os.path.exists(pts_name_b):
-
-global pts, finished
-
+# 🔹 Load or Initialize Annotations
 if os.path.exists(pts_name):
     pts_dict = np.load(pts_name, allow_pickle=True).item()
-    pts = pts_dict['pts']
-else: 
-    pts_dict = {}
-    pts = np.array([]).reshape(-1,2)
+    pts = pts_dict.get('pts', np.array([]).reshape(-1, 2))
+else:
+    print(f"Warning: {pts_name} not found. Creating a new annotation file.")
+    pts_dict = {"pts": np.array([]).reshape(-1, 2), "ident": np.array([])}
+    pts = np.array([]).reshape(-1, 2)
 
 finished = False
 
+# 🔹 Ensure ROI Selection Before Continuing
+show_roi_selection(img)
+
+# 🔹 Extract ROI
+xt, yt, xb, yb = roi
+print(f"Using ROI: {xt}, {yt}, {xb}, {yb}")
+
 while not finished:
-    #####################
-    # selection of zone to keep
-    #####################
     rgb = img.copy()
     for pt in pts:
-        cv2.circle(rgb, pt.astype(np.int16), 3, (0,255,0), -1)
+        cv2.circle(rgb, pt.astype(np.int16), 3, (0, 255, 0), -1)
+
     fig_all, ax = plt.subplots(figsize=(13, 7))
     ax.imshow(rgb)
     
-    selector = RectangleSelector(
-    ax, select_roi,
-    useblit=True,
-    button=[1, 3],  # disable middle button
-    minspanx=5, minspany=5,
-    spancoords='pixels',
-    interactive=True)
-    
-    axcolor = 'lightgoldenrodyellow'
-    lineax1 = plt.axes([0.8, 0.025, 0.1, 0.04])
-    button = Button(lineax1, 'terminate', color=axcolor, hovercolor='0.975')
+    button_ax = plt.axes([0.8, 0.025, 0.1, 0.04])
+    button = Button(button_ax, 'Terminate')
     button.on_clicked(terminate)
-    
-    plt.axis("off")
-    plt.title ('close window when selection of zone is correct')
-    plt.show()
-    fig_all.canvas.mpl_connect('close_event', on_close)
-    
-    if not finished:
 
-        global roi
-        xt, yt, xb, yb = roi
+    plt.axis("off")
+    plt.title("Close window when selection is correct")
+    plt.show()
+
+    if not finished:
+        pts_local = np.array([]).reshape(-1, 2)
         
-        global pts_local
-        pts_local = np.array([]).reshape(-1,2)
-        
-        global fig
-        fig, ax = plt.subplots(figsize=(16,9))
-        global imgplot
-        global image
-        #image = image_in.copy()
-        #ax.axis=("off")
-        image = rgb[yt:yb,xt:xb]
+        fig, ax = plt.subplots(figsize=(16, 9))
+        image = rgb[yt:yb, xt:xb]
         imgplot = plt.imshow(image)
         
-        # to close the window when line is correctly selected
-        fig.canvas.mpl_connect('close_event', on_close)
-        
-        
-        
-        # Call click func
-        global cid
-       
-        cid = fig.canvas.mpl_connect('button_press_event', button_press_callback)
-        button.disconnect(cid)
+        fig.canvas.mpl_connect('button_press_event', button_press_callback)
         
         plt.axis("off")
-        #plt.tight_layout()
-        plt.title('to correct a point right click next to it when finish close window')
+        plt.title("Left click: Add point, Right click: Remove point, Close window to finish")
         plt.show()
-        
-        if len(pts)==0: pts = pts_local + np.array([xt, yt]).reshape(1,2)
-        else: pts = np.vstack((pts, pts_local + np.array([xt, yt]).reshape(1,2)))
 
-pts_dict['pts'] = pts.copy()      
-np.save(pts_name, pts)
+        if len(pts) == 0:
+            pts = pts_local + np.array([xt, yt]).reshape(1, 2)
+        else:
+            pts = np.vstack((pts, pts_local + np.array([xt, yt]).reshape(1, 2)))
 
-#pts = np.load(pts_name_b)
-try: idents = pts_dict['ident'].astype(np.int16)
-except: idents = []
+pts_dict['pts'] = pts.copy()
+np.save(pts_name, pts_dict)
+
+# 🔹 Load Identifiers
+idents = pts_dict.get('ident', np.array([])).astype(np.int16)
 annot = True
 
 font = cv2.FONT_HERSHEY_SIMPLEX
 fontScale = 2
-fontColor = (0,0,0)
+fontColor = (0, 0, 0)
 thickness = 2
-lineType = 2
 
 if len(idents) == len(pts):
     annot = False
-    
+
     for ident, pt in zip(idents, pts.astype(np.int16)):
-        cv2.circle(img, pt, 5, (255,0,0), -1)
-        cv2.putText(img,f"{ident}", pt, font, fontScale, fontColor, thickness, lineType)
+        cv2.circle(img, pt, 5, (255, 0, 0), -1)
+        cv2.putText(img, f"{ident}", pt, font, fontScale, fontColor, thickness)
+
     plt.imshow(img)
     plt.axis('off')
     plt.show()
-    
-    print('Nouvelle annotation y / n')
-    if input() == 'y': annot=True
-    
+
+    if input("Nouvelle annotation? (y/n): ").strip().lower() == 'y':
+        annot = True
+
 if annot:
-    #idents = np.array([])
     new_pts = pts[len(idents):]
     for pt in new_pts:
-        im_plot  = img_ori.copy()
-        cv2.circle(im_plot, pt.astype(np.int16), 5, (0,255,0), -1)
+        im_plot = img_ori.copy()
+        cv2.circle(im_plot, pt.astype(np.int16), 5, (0, 255, 0), -1)
+        
         plt.imshow(im_plot)
-        plt.title('close window and enter point identity on keyboard')
+        plt.title("Close window and enter point identity on keyboard")
         plt.axis('off')
         plt.show()
         
-        new_in = int(input())
+        new_in = int(input("Enter point identity: "))
         idents = np.append(idents, new_in)
 
     pts_dict['ident'] = idents.astype(np.int16)
     np.save(pts_name, pts_dict)
-    
+
     for ident, pt in zip(idents, pts.astype(np.int16)):
-        cv2.circle(img, pt, 5, (255,0,0), -1)
-        cv2.putText(img,f"{ident}", pt, font, fontScale, fontColor, thickness, lineType)
+        cv2.circle(img, pt, 5, (255, 0, 0), -1)
+        cv2.putText(img, f"{ident}", pt, font, fontScale, fontColor, thickness)
+
     plt.imshow(img)
     plt.axis('off')
-    plt.title('current annotation')
+    plt.title("Final annotation")
     plt.show()

@@ -13,7 +13,7 @@ from matplotlib import pyplot as plt
 import matplotlib.patches as mpatches
 
 draw_pitch = True
-
+truc =0
 pts = [[0,0], [0,15],[14,0],[14,15],[28,0],[28,15]]
 pts_raq = [[0, 7.5 - 2.45], [0, 7.5 + 2.45],
            [5.8, 7.5 - 2.45], [5.8, 7.5 + 2.45],

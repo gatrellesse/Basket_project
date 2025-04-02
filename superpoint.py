@@ -24,7 +24,7 @@ gc.collect()
 torch.cuda.empty_cache()
 """
 
-video_in = "../ffb/CFBB vs UNION TARBES LOURDES PYRENEES BASKET Men's Pro Basketball - Tactical.mp4"
+video_in = "/home/davy/Ensta/PIE/Terrain_Detection/CFBB vs UNION TARBES LOURDES PYRENEES BASKET Men's Pro Basketball - Tactical.mp4"
 
 MIN_MATCH_COUNT = 10
 i_frame = [104700, 104700+75, 104700+75+35]
@@ -35,7 +35,7 @@ plot_pts = False
 Hs_name = f"Hs_supt{size_ratio}.npy"
 video_out = f"pitch_supt{size_ratio}.mp4"
 
-pitch = np.load('pitch.npy')
+#pitch = np.load('pitch.npy')
 conf_thresh /= 100
 if size_ratio > 10: size_ratio /= 10
 
@@ -49,6 +49,15 @@ def best_match(new_img, ref_hist):
      match_probs = [cv2.matchTemplate(hist, new_hist, cv2.TM_CCOEFF_NORMED)[0][0] for hist in ref_hist.T]
      match_probs = np.array(match_probs)
      return np.argmax(match_probs), match_probs
+
+def load_data(img_name, pts_name):
+    """Load image and points data."""
+    data = np.load(pts_name, allow_pickle=True).item()
+    img = cv2.imread(img_name)
+    pts = data["pts"]
+    idents = data["ident"]
+    return img, pts, idents
+
 
 
 
@@ -72,10 +81,13 @@ annots_idx = []
 for i in i_frame:
     annots_name = f"pts_dict_{i}.npy"
     img = cv2.imread(f"img_{i}.png")
+    img = f"img_{i}.png"
+    img, pts, idents = load_data(img, annots_name)
     imgs.append(img)
-    annot = np.load(annots_name)
-    annots.append(annot[:,1:])
-    annots_idx.append(np.where(annot[:,0])[0])
+    annots.append(pts)
+    annots_idx.append(idents)
+
+
 
 h, w = img.shape[:2]
 if size_ratio != 1: w_resize, h_resize = int(w / size_ratio), int(h / size_ratio)
@@ -92,7 +104,7 @@ with torch.no_grad():
     inputs = processor(rgbs, return_tensors="pt").to(device)
     outputs = model(**inputs)
 
-image_sizes = torch.tile(torch.tensor([1, 1]), (3,1)).to(device)
+image_sizes = torch.tile(torch.tensor([h_resize,w_resize]), (len(rgbs),1)).to(device)
 outputs = processor.post_process_keypoint_detection(outputs, image_sizes)
 
 kpts_ref = []
@@ -107,8 +119,6 @@ for output in outputs:
     outboard = np.logical_not((kp[:,1] > 875) * (kp[:,0] < 325))
     kpts_ref.append(kp[outboard])
     descs_ref.append(desc[outboard])
-
-
 
 init_frame = 100_000
 avi_name = 'results.avi'
@@ -134,7 +144,6 @@ with torch.no_grad():
             i_match, probs = best_match(frame, ref_hist)
             hist_matches.append(i_match)
             imgs.append(frame)
-
     
         if size_ratio == 1: rgbs = [cv2.cvtColor(img, cv2.COLOR_BGR2RGB) for img in imgs]
         else:
@@ -144,9 +153,8 @@ with torch.no_grad():
                 rgbs.append(cv2.cvtColor(img_r, cv2.COLOR_BGR2RGB))
         inputs = processor(rgbs, return_tensors="pt").to(device)
         outputs = model(**inputs)
-        image_sizes = torch.tile(torch.tensor([1, 1]), (len(imgs),1)).to(device)
+        image_sizes = torch.tile(torch.tensor([h_resize,w_resize]), (len(rgbs),1)).to(device)
         outputs = processor.post_process_keypoint_detection(outputs, image_sizes)
-        
         
         for i_match, output  in zip(hist_matches, outputs):
             kp = output['keypoints'].to('cpu').numpy()
@@ -158,6 +166,7 @@ with torch.no_grad():
             outboard = np.logical_not((kp[:,1] > 875) * (kp[:,0] < 325))
             kp = kp[outboard]
             desc = desc[outboard]
+
             
             t1 = time.time()
             flann = cv2.FlannBasedMatcher(index_params, search_params)
@@ -170,18 +179,22 @@ with torch.no_grad():
             
             t_match += time.time() - t1
             if len(good)>MIN_MATCH_COUNT:
-                src_pts = np.float32([ kpts_ref[i_match][m.queryIdx] for m in good ]).reshape(-1,1,2)
+                src_pts = np.float32([ kpts_ref[i_match][m.queryIdx] for m in good]).reshape(-1,1,2)
                 dst_pts = np.float32([ kp[m.trainIdx] for m in good ]).reshape(-1,1,2)
-             
             Mratio, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC,5.0)
+
             M =  np.diag([size_ratio, size_ratio,1]) @ Mratio @ np.diag([1 / size_ratio, 1 / size_ratio, 1])
             new_pts = cv2.perspectiveTransform(annots[i_match].reshape(-1,1,2), M).squeeze()
+
             M[2,2] = i_match
-            pitch_in = pitch[annots_idx[i_match]]
-            new_in = new_pts[annots_idx[i_match]]
+            #pitch_in = pitch[annots_idx[i_match]]
+            pitch_in = annots[i_match]
+            #new_in = new_pts[annots_idx[i_match]
+            new_in = new_pts
             M2img, mask = cv2.findHomography(pitch_in, new_in, cv2.RANSAC)
             M2pitch, mask = cv2.findHomography(new_in, pitch_in, cv2.RANSAC)
             Hs.append(np.stack((M, M2img, M2pitch)))
+        
         
         if plot_pts:        
             for pt in new_pts.astype(np.int16):

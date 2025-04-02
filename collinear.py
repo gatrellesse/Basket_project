@@ -2,6 +2,7 @@ import numpy as np
 from tqdm import tqdm
 import cv2
 
+<<<<<<< HEAD
 def load_data(img_name, pts_name):
     """Load image and points data."""
     data = np.load(pts_name, allow_pickle=True).item()
@@ -9,6 +10,16 @@ def load_data(img_name, pts_name):
     pts = data["pts"]
     idents = data["ident"]
     return img, pts, idents
+=======
+# Load the .npy file
+data = np.load('pts_dict_104775.npy', allow_pickle=True).item()
+# Load the image
+img = cv2.imread('img_104775.png')
+# Extract points and identities
+pts = data["pts"]
+pts_2 = pts.copy()
+idents = data["ident"]
+>>>>>>> 69d6912 (feat: atualiza superpoint.py)
 
 def draw_points(img, pts, color=(255, 255, 0), radius=3):
     """Draw points on the image."""
@@ -91,6 +102,7 @@ def find_all_intersections(new_img, vanishing_pts, min_x, min_y):
                 cv2.circle(new_img, (r1_adj, r2_adj), 3, (255, 0, 255), -1)
     return intersections
 
+<<<<<<< HEAD
 def point_to_line_distances(points, pts_idxs, pts):
     """Calculate distances from points to lines."""
     distances = [[] for _ in range(len(points))]
@@ -106,6 +118,10 @@ def point_to_line_distances(points, pts_idxs, pts):
             d = abs(A * x0 + B * y0 + C) / np.sqrt(A**2 + B**2)
             distances[i].append(d)
     return distances
+=======
+# Draw projected collinear points in red
+cv2.imwrite('arrests2.jpg', img)
+>>>>>>> 69d6912 (feat: atualiza superpoint.py)
 
 def calculate_rmse(distances):
     """Calculate RMSE for each set of distances."""

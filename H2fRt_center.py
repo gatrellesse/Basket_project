@@ -316,6 +316,7 @@ w = 1920
 pitch = np.load('pitch.npy')
 pitch_reshaped = pitch.reshape(-1,1,2)
 errors = []
+errors_2 = []
 for homog_int, homog in zip(Hs_int, homogs):
     screen_pts = cv2.perspectiveTransform(pitch_reshaped, homog).squeeze()
     screen_pts_int = cv2.perspectiveTransform(pitch_reshaped, homog_int).squeeze()
@@ -330,7 +331,7 @@ for homog_int, homog in zip(Hs_int, homogs):
 errors = np.array(errors)
 print(time.time() - t0)
 
-truc += 2
+#truc += 2
 
 size_ratio = 1
 video_out = f"pitch_supt{size_ratio}_interp.mp4"

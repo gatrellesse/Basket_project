@@ -1,4 +1,8 @@
 [ZoneTransfer]
 ZoneId=3
+<<<<<<< HEAD
 ReferrerUrl=https://enstafr.sharepoint.com/sites/BasketPIE/_layouts/15/stream.aspx?id=%2Fsites%2FBasketPIE%2FShared%20Documents%2FGeneral%2Fd%C3%A9placement%20joeurs%20et%20vid%C3%A9o%20INSEP%2FCFBB%20vs%20UNION%20TARBES%20LOURDES%20PYRENEES%20BASKET%20Men%27s%20Pro%20Basketball%20%2D%20Tactical%2Emp4&referrer=StreamWebApp%2EWeb&referrerScenario=AddressBarCopied%2Eview%2Ec81f73b6%2Dabbf%2D4022%2Db044%2Dbfc5fb392755
+=======
+ReferrerUrl=https://enstafr.sharepoint.com/sites/BasketPIE/_layouts/15/filebrowser.aspx?fileBrowser=%7B%22sdk%22%3A%22v1%2E0%22%2C%22entry%22%3A%7B%22sharePoint%22%3A%7B%22byPath%22%3A%7B%22web%22%3A%22%2Fsites%2FBasketPIE%22%2C%22folder%22%3A%22%2Fsites%2FBasketPIE%2FShared%20Documents%2FGeneral%22%7D%7D%7D%7D&app=teamsfile&teamId=19%3AAWaD%2D9IkHkD8ZGBsfGCw5mLoqMH231Zmlyskq%5F0VenY1%40thread%2Etacv2&channelId=19%3AAWaD%2D9IkHkD8ZGBsfGCw5mLoqMH231Zmlyskq%5F0VenY1%40thread%2Etacv2&entityId=FileBrowserTabApp&theme=dark&ringId=general&locale=pt%2DBR&sid=1e5f889d%2D4e25%2D460e%2Da5f7%2D0c9866469509&asid=1b44ac1d%2D053f%2D4bbc%2D8502%2D2335cf9c190d&subEntityId=&scenario=ChannelFiles&auth=none&hostName=TeamsModern&id=%2Fsites%2FBasketPIE%2FShared%20Documents%2FGeneral%2Fd%C3%A9placement%20joeurs%20et%20vid%C3%A9o%20INSEP&listurl=%2Fsites%2FBasketPIE%2FShared%20Documents&viewid=8d3b6e1b%2Dd73a%2D4f68%2D9d2b%2D731038f54689&p=31&view=0
+>>>>>>> 69d6912 (feat: atualiza superpoint.py)
 HostUrl=https://enstafr.sharepoint.com/sites/BasketPIE/_layouts/15/download.aspx?UniqueId=500c2826%2Dca63%2D4d23%2Da3f0%2D5fed2ffa0389
