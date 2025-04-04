@@ -202,6 +202,7 @@ def main():
         cv2.imwrite(vanish, new_img)
         cv2.imwrite(terrain_arrests, img)
         pts_dict = {"pts": pts, "ident": idents}
+        pts_name = annotations_folder/ f"pts_dict_{i_frame[i]}_New.npy"
         print(f"Saving points to {pts_name}")
         np.save(pts_name, pts_dict)
 
