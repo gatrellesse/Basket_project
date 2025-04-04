@@ -4,7 +4,7 @@
 #Ignore png,jpg files in the current folder
 *.png 
 *.jpg
-
+*.zip
 #Ignore odt files in the current folder
 *.odt
 *.npy

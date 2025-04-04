@@ -28,7 +28,8 @@ class VideoProcessor:
         
         self.Hs_name = self.annotations_folder / f"Hs_supt{self.config['size_ratio']}.npy"
         self.video_out = self.videos_folder / f"pitch_supt{self.config['size_ratio']}.mp4"
-        
+        self.video_in = self.videos_folder / self.config['video_in']
+
     def _load_models(self):
         """Load the SuperPoint model and processor."""
         self.processor = AutoImageProcessor.from_pretrained("magic-leap-community/superpoint")
@@ -49,7 +50,6 @@ class VideoProcessor:
             self.imgs.append(img)
             self.annots.append(pts)
             self.annots_idx.append(idents)
-            
         self._process_reference_images()
         
     def _load_image_and_points(self, img_path, pts_path):
@@ -89,8 +89,8 @@ class VideoProcessor:
         with torch.no_grad():
             inputs = self.processor(images, return_tensors="pt").to(self.device)
             outputs = self.model(**inputs)
-            image_sizes = torch.tile(torch.tensor([self.h_resize, self.w_resize]), (len(images), 1)).to(self.device)
-            outputs = self.processor.post_process_keypoint_detection(outputs, image_sizes)
+        image_sizes = torch.tile(torch.tensor([self.h_resize, self.w_resize]), (len(self.rgbs), 1)).to(self.device)
+        outputs = self.processor.post_process_keypoint_detection(outputs, image_sizes)
             
         kpts = []
         descs = []
@@ -108,7 +108,6 @@ class VideoProcessor:
             
             kpts.append(kp[outboard])
             descs.append(desc[outboard])
-            
         return kpts, descs
         
     def process_video(self):
@@ -131,13 +130,11 @@ class VideoProcessor:
                 
                 if not batch_data:
                     break
-                    
                 batch_results, t_match  = self._process_keypoints(batch_data, t_match)
                 Hs.extend(batch_results)
-                print("testing")
                 if i % 100 == 0:
                     print(f"Processed {i} frames in {time.time() - t0:.2f}s (matching: {t_match:.2f}s)")
-                    
+        
         self._save_homographies(Hs)
         self._create_output_video()
         
@@ -203,7 +200,7 @@ class VideoProcessor:
                 Mratio, _ = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
                 M = np.diag([self.config['size_ratio'], self.config['size_ratio'], 1]) @ Mratio @ np.diag(
                     [1 / self.config['size_ratio'], 1 / self.config['size_ratio'], 1])
-                
+                M[2,2] = i_match
                 new_pts = cv2.perspectiveTransform(self.annots[i_match].reshape(-1, 1, 2), M).squeeze()
                 M2img, _ = cv2.findHomography(self.annots[i_match], new_pts, cv2.RANSAC)
                 M2pitch, _ = cv2.findHomography(new_pts, self.annots[i_match], cv2.RANSAC)
@@ -250,7 +247,7 @@ class VideoProcessor:
         i_ref = Hs[:, 0, 2, 2].copy().astype(np.int16)
         Hs[:, 0, 2, 2] = 1
         
-        video_capture = cv2.VideoCapture(str(self.config['video_in']))
+        video_capture = cv2.VideoCapture(self.video_in)
         video_capture.set(cv2.CAP_PROP_POS_FRAMES, self.config['init_frame'])
         
         avi_name = self.videos_folder / "results.avi"
@@ -276,7 +273,6 @@ class VideoProcessor:
                 self.annots[i_match].reshape(-1, 1, 2),
                 Hs[i, 0]
             ).squeeze()
-            
             for pt in new_pts.astype(np.int16):
                 cv2.circle(frame, pt, 10, (0, 255, 0), -1)
                 
@@ -300,7 +296,7 @@ if __name__ == "__main__":
     config = {
         'video_in': "basket_game.mp4",
         'i_frame': [104700, 104700+75, 104700+75+35],
-        'size_ratio': 15,
+        'size_ratio': 1.5,
         'conf_thresh': 10,
         'plot_pts': False,
         'init_frame': 100000,
