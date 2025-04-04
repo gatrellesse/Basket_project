@@ -294,6 +294,7 @@ class VideoProcessor:
         os.system(cmd)
 
 if __name__ == "__main__":
+    #Config comes from superpoint_config.json
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str, required=True, help="Path to JSON config file")
     args = parser.parse_args()
