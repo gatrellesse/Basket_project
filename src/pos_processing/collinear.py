@@ -1,6 +1,7 @@
-import numpy as np
 from tqdm import tqdm
+from pathlib import Path
 import cv2
+import numpy as np
 
 def load_data(img_name, pts_name):
     """Load image and points data."""
@@ -132,9 +133,16 @@ def make_parallel(chosen_pt, pts_idxs, pts, img):
 
 def main():
     i_frame = [104700, 104700 + 75, 104700 + 75 + 35]
+    current_dir = Path(__file__).parent.resolve()
+    base_path = current_dir.parent 
+    base_path = base_path / "data"
+    images_folder = base_path / "input_imgs"
+    videos_folder = base_path / "videos"
+    annotations_folder = base_path / "annotations"
+    output_folder = base_path / "output_imgs"
     for i in tqdm(range(len(i_frame))):
-        img_name = f"img_{i_frame[i]}.png"
-        pts_name = f"pts_dict_{i_frame[i]}.npy"
+        img_name = images_folder/ f"img_{i_frame[i]}.png"
+        pts_name = annotations_folder/ f"pts_dict_{i_frame[i]}.npy"
 
         img, pts, idents = load_data(img_name, pts_name)
         draw_points(img, pts)
@@ -189,8 +197,13 @@ def main():
         r2_adj = r2 - min_y
         cv2.circle(new_img, (r1_adj, r2_adj), 3, (25, 50, 255), -1)
 
-        cv2.imwrite(f"vanishing_arrests_{i_frame[i]}.jpg", new_img)
-        cv2.imwrite(f"terrain_arrests_{i_frame[i]}.jpg", img)
+        vanish = output_folder / f"vanishing_arrests_{i_frame[i]}.jpg"
+        terrain_arrests = output_folder / f"terrain_arrests_{i_frame[i]}.jpg"
+        cv2.imwrite(vanish, new_img)
+        cv2.imwrite(terrain_arrests, img)
+        pts_dict = {"pts": pts, "ident": idents}
+        print(f"Saving points to {pts_name}")
+        np.save(pts_name, pts_dict)
 
 if __name__ == "__main__":
     main()

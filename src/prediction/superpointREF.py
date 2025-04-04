@@ -1,12 +1,13 @@
+from pathlib import Path
+from matplotlib import pyplot as plt
+from transformers import AutoImageProcessor, SuperPointForKeypointDetection
+import json
+import argparse
 import os
 import time
-from pathlib import Path
-
 import cv2
 import numpy as np
 import torch
-from matplotlib import pyplot as plt
-from transformers import AutoImageProcessor, SuperPointForKeypointDetection
 
 
 class VideoProcessor:
@@ -293,19 +294,16 @@ class VideoProcessor:
         os.system(cmd)
 
 if __name__ == "__main__":
-    config = {
-        'video_in': "basket_game.mp4",
-        'i_frame': [104700, 104700+75, 104700+75+35],
-        'size_ratio': 1.5,
-        'conf_thresh': 10,
-        'plot_pts': False,
-        'init_frame': 100000,
-        'max_frames': 2000,
-        'batch_size': 4,
-        'min_match_count': 10,
-        'index_params': dict(algorithm=1, trees=5),  # FLANN_INDEX_KDTREE=1
-        'search_params': dict(checks=50)
-    }
-    
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config', type=str, required=True, help="Path to JSON config file")
+    args = parser.parse_args()
+
+    config_path = Path(args.config)
+    if not config_path.exists():
+        raise FileNotFoundError(f"Config file not found: {config_path}")
+
+    with open(config_path, 'r') as f:
+        config = json.load(f)
+
     processor = VideoProcessor(config)
     processor.process_video()
