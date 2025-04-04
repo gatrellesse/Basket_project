@@ -41,7 +41,7 @@ conf_thresh = 10
 plot_pts = False
 
 
-video_in = videos_folder / "CFBB vs UNION TARBES LOURDES PYRENEES BASKET Men's Pro Basketball - Tactical.mp4"
+video_in = videos_folder / "basket_game.mp4"
 Hs_name = annotations_folder / f"Hs_supt{size_ratio}.npy"
 video_out = videos_folder / f"pitch_supt{size_ratio}.mp4"
 
@@ -139,6 +139,7 @@ init_frame = 100_000
 avi_name =  videos_folder/ f"results.avi"
 video_capture = cv2.VideoCapture()
 if video_capture.open( video_in ):
+    print("video carregado")
     w, h = int(video_capture.get(cv2.CAP_PROP_FRAME_WIDTH)), int(video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = int(video_capture.get(cv2.CAP_PROP_FPS))
     frame_count = video_capture.get(cv2.CAP_PROP_FRAME_COUNT)
@@ -165,7 +166,6 @@ with torch.no_grad():
             for img in imgs:
                 img_r = cv2.resize(img, (w_resize, h_resize))
                 rgbs.append(cv2.cvtColor(img_r, cv2.COLOR_BGR2RGB))
-        print(rgbs)
         inputs = processor(rgbs, return_tensors="pt").to(device)
         outputs = model(**inputs)
         image_sizes = torch.tile(torch.tensor([h_resize,w_resize]), (len(rgbs),1)).to(device)
