@@ -44,7 +44,7 @@ class VideoProcessor:
         self.annots_idx = []
         
         for i in self.config['i_frame']:
-            annots_name = self.annotations_folder / f"pts_dict_{i}.npy"
+            annots_name = self.annotations_folder / f"pts_dict_{i}_New.npy"
             imgs_path = self.images_folder / f"img_{i}.png"
             
             img, pts, idents = self._load_image_and_points(imgs_path, annots_name)
