@@ -72,11 +72,11 @@ def terminate(event):
     finished = True
     plt.close('all')
     
-frame_idx = [1000, 100000, 100170, 170040]
-i_frame = [104700, 104700+75, 104700+75+35]
-i = 2
-img_name = f"src/data/input_imgs/img_{i_frame[i]}.png"
-pts_name = f"src/data/annotations/pts_dict_{i_frame[i]}.npy"
+frame_idx = [1001, 100001, 100171, 170041,]
+i_frame = [1047003, 1047753, 1048103]  
+i=2
+img_name = f"/home/davy/Ensta/PIE/Terrain/Terrain_Detection/src/data/input_imgs/img_{i_frame[i]}.png"
+pts_name = f"/home/davy/Ensta/PIE/Terrain/Terrain_Detection/src/data/annotations/pts_dict_{i_frame[i]}.npy"
 
 img = cv2.imread(img_name)
 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)

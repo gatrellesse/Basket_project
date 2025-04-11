@@ -54,10 +54,32 @@ class VideoProcessor:
         self._process_reference_images()
         
     def _load_image_and_points(self, img_path, pts_path):
-        """Load image and points data from files."""
-        data = np.load(pts_path, allow_pickle=True).item()
-        img = cv2.imread(img_path)
+        raw = np.load(pts_path, allow_pickle=True)
+
+        # Caso o conteúdo seja já um dicionário (correto)
+        if isinstance(raw, dict):
+            data = raw
+
+        # Caso seja um array escalar contendo um dict
+        elif isinstance(raw, np.ndarray) and raw.shape == () and isinstance(raw.item(), dict):
+            data = raw.item()
+
+        elif isinstance(raw, np.ndarray) and len(raw) == 1 and isinstance(raw[0], dict):
+            data = raw[0]
+
+        elif isinstance(raw, np.ndarray) and raw.ndim == 2 and raw.shape[1] == 2:
+            data = {
+                "pts": raw,
+                "ident": np.arange(len(raw))
+            }
+
+        else:
+            raise ValueError(f"Formato inválido em {pts_path}: tipo {type(raw)}")
+
+        img = cv2.imread(str(img_path))
         return img, data["pts"], data["ident"]
+
+
         
     def _process_reference_images(self):
         """Process reference images for matching."""
@@ -203,10 +225,13 @@ class VideoProcessor:
                     [1 / self.config['size_ratio'], 1 / self.config['size_ratio'], 1])
                 M[2,2] = i_match
                 new_pts = cv2.perspectiveTransform(self.annots[i_match].reshape(-1, 1, 2), M).squeeze()
-                M2img, _ = cv2.findHomography(self.annots[i_match], new_pts, cv2.RANSAC)
-                M2pitch, _ = cv2.findHomography(new_pts, self.annots[i_match], cv2.RANSAC)
-                
-                batch_results.append(np.stack((M, M2img, M2pitch)))
+                if len(self.annots[i_match]) >= 4 and len(new_pts) >= 4:
+                    M2img, _ = cv2.findHomography(self.annots[i_match], new_pts, cv2.RANSAC)
+                    M2pitch, _ = cv2.findHomography(new_pts, self.annots[i_match], cv2.RANSAC)
+                    batch_results.append(np.stack((M, M2img, M2pitch)))
+                else:
+                    print(f"Frame {i} ignorado: menos de 4 pontos correspondentes.")
+                                
                 
             if self.config['plot_pts']:
                 self._plot_points(batch_data['images'][i], new_pts, i, i_match)

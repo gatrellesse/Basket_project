@@ -142,7 +142,7 @@ def main():
     output_folder = base_path / "output_imgs"
     for i in tqdm(range(len(i_frame))):
         img_name = images_folder/ f"img_{i_frame[i]}.png"
-        pts_name = annotations_folder/ f"pts_dict_{i_frame[i]}.npy"
+        pts_name = annotations_folder/ f"pts_dict_{i_frame[i]}_New.npy"
 
         img, pts, idents = load_data(img_name, pts_name)
         draw_points(img, pts)
@@ -207,4 +207,6 @@ def main():
         np.save(pts_name, pts_dict)
 
 if __name__ == "__main__":
+    data = np.load("/home/davy/Ensta/PIE/Terrain/Terrain_Detection/src/data/annotations/pts_dict_104700_New.npy", allow_pickle=True)
+    print(type(data))
     main()
