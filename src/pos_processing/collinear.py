@@ -1,5 +1,7 @@
 from tqdm import tqdm
 from pathlib import Path
+import argparse
+import json
 import cv2
 import numpy as np
 
@@ -131,8 +133,9 @@ def make_parallel(chosen_pt, pts_idxs, pts, img):
             line_to_be_traced = np.array(line_to_be_traced, np.int32).reshape((-1, 1, 2))
             cv2.polylines(img, [line_to_be_traced], isClosed=False, color=(255, 234, 0), thickness=2)
 
-def main():
-    i_frame = [104700, 104700 + 75, 104700 + 75 + 35]
+def main(frames):
+    i_frame = frames
+    print(f"Processing frames: {i_frame}")
     current_dir = Path(__file__).parent.resolve()
     base_path = current_dir.parent 
     base_path = base_path / "data"
@@ -207,6 +210,17 @@ def main():
         np.save(pts_name, pts_dict)
 
 if __name__ == "__main__":
-    data = np.load("/home/davy/Ensta/PIE/Terrain/Terrain_Detection/src/data/annotations/pts_dict_104700_New.npy", allow_pickle=True)
-    print(type(data))
-    main()
+    #Config comes from superpoint_config.json
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config', type=str, required=True, help="Path to JSON config file")
+    args = parser.parse_args()
+
+    config_path = Path(args.config).resolve()
+    print(config_path)
+    if not config_path.exists():
+        raise FileNotFoundError(f"Config file not found: {config_path}")
+
+    with open(config_path, 'r') as f:
+        config = json.load(f)
+    frames = config["i_frame"]
+    main(frames)
