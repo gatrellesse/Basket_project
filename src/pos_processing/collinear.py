@@ -132,7 +132,7 @@ def make_parallel(chosen_pt, pts_idxs, pts, img):
             cv2.polylines(img, [line_to_be_traced], isClosed=False, color=(255, 234, 0), thickness=2)
 
 def main():
-    i_frame = [104700, 104700 + 75, 104700 + 75 + 35]
+    i_frame = [104700,1047001,1047751,1048101,104775,1047002,1047752,104810,1047753,1048103]
     current_dir = Path(__file__).parent.resolve()
     base_path = current_dir.parent 
     base_path = base_path / "data"
@@ -207,6 +207,4 @@ def main():
         np.save(pts_name, pts_dict)
 
 if __name__ == "__main__":
-    data = np.load("/home/davy/Ensta/PIE/Terrain/Terrain_Detection/src/data/annotations/pts_dict_104700_New.npy", allow_pickle=True)
-    print(type(data))
     main()
