@@ -7,7 +7,7 @@ echo "Fixing .npy format..."
 python3 tools/fix_npy_format.py
 
 echo "Running superpointREF.py with config..."
-python3 prediction/superpointREF.py \
+python3 prediction/superpointREF_Inter.py \
   --config prediction/superpoint_config.json
 
 echo "Pipeline complete."

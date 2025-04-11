@@ -9,3 +9,5 @@ setup:
 # Step to run the pipeline script
 run_pipeline: setup
 	./run_pipeline.sh
+run:
+	./run_pipeline.sh
