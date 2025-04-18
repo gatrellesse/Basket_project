@@ -145,7 +145,7 @@ def main(frames):
     output_folder = base_path / "output_imgs"
     for i in tqdm(range(len(i_frame))):
         img_name = images_folder/ f"img_{i_frame[i]}.png"
-        pts_name = annotations_folder/ f"pts_dict_{i_frame[i]}_New.npy"
+        pts_name = annotations_folder/ f"pts_dict_{i_frame[i]}.npy"
 
         img, pts, idents = load_data(img_name, pts_name)
         draw_points(img, pts)

@@ -1,7 +1,7 @@
 import cv2
 
 #Open video
-cap = cv2.VideoCapture('/home/davy/Ensta/PIE/Terrain/Terrain_Detection/src/data/videos/basket_game.mp4')
+cap = cv2.VideoCapture('../data/videos/basket_game.mp4')
 length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
 def onChange(trackbarValue):
@@ -18,7 +18,7 @@ cv2.createTrackbar('frame', 'S = Save Frame / ESC = Exit', 0, length, onChange)
 #Display first frame
 onChange(0)
 
-frames = [7003, 7753, 8103]
+frames = [3]
 current_frame = 0
 
 while cap.isOpened():
@@ -31,11 +31,11 @@ while cap.isOpened():
     elif k == ord('s'):  # Press S to save
         ret, img = cap.read()
         if ret:
-            filename = f"../data/input_imgs/img_104{frames[current_frame]}test.png"
+            filename = f"../data/input_imgs/img_{frames[current_frame]}.png"
             cv2.imwrite(filename, img)
             print(f"Frame {filename} saved.")
             current_frame += 1
-            if current_frame > 2:
+            if current_frame >3 :
                 break
 
 cap.release()
