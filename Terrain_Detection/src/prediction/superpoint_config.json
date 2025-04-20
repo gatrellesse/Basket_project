@@ -1,5 +1,5 @@
 {
-    "video_in": "basket_game.mp4",
+    "video_in": "../../../TacTic/src/data/basket_game.mp4",
     "i_frame": [1,2,3,4,5,6],    
     "size_ratio": 1.5,
     "conf_thresh": 10,

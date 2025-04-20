@@ -1,0 +1,11 @@
+#Ignore mp4 files in the current folder
+*.mp4
+*.npy
+#Ignore png,jpg files in the current folder
+*.png 
+*.jpg
+*.zip
+#Ignore odt files in the current folder
+*.odt
+#*.npy
+*.Identifier

@@ -2,6 +2,8 @@ import cv2
 
 #Open video
 cap = cv2.VideoCapture('../data/videos/basket_game.mp4')
+cap = cv2.VideoCapture('../../../TacTic/src/data/basket_game.mp4')
+
 length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
 def onChange(trackbarValue):
