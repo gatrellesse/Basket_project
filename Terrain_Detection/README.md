@@ -40,3 +40,14 @@ The following steps outline the flow of the process:
 
 ```bash
 pip install opencv-python numpy transformers torch
+```
+
+## Usage
+
+To run the project, use the following command in /Terrain_Detection:
+
+```bash
+make run_pipeline
+```
+
+
