@@ -47,14 +47,15 @@ Variable paths to fix:
 ## Pipeline:
 
 
+- **Terrain Detection**
+  - **File**: `Hs.npy`
+  - **Description**: Terrain hemography stored in the `Hs.npy` file.
+  - Runned by makefile
+  
 - **Player Detection**
   - **File**: `players.py`
   - **Function**: `func_box()` --> change for a best.py detector
   - **Output**: `bbox.npy` (bounding box coordinates)
-
-- **Terrain Detection**
-  - **File**: `Hs.npy`
-  - **Description**: Terrain hemography stored in the `Hs.npy` file.
 
 - **TacTic** 
   - **Track Follower**
