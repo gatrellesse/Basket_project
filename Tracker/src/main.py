@@ -15,8 +15,8 @@ import supervision as sv
 from matplotlib import pyplot as plt
 from typing import List
 
-from players import func_box
-from pitch_utils import draw_points_on_pitch, run_radar, on_pitch, in_pitch
+from func_players_batch import func_box
+from pitch_utils import on_pitch, in_pitch
 from track_utils import  box_and_track, ChainTrack, GraphTrack, ShowTrackHmm, crop_track, run_sv_tracker
 from render_track import plot_tracks
 from team import TeamClassifier, get_crops, create_batches

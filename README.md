@@ -53,8 +53,8 @@ Variable paths to fix:
   - Runned by makefile
   
 - **Player Detection**
-  - **File**: `players.py`
-  - **Function**: `func_box()` --> change for a best.py detector
+  - **Folder**: `Boxes_Detection.py`
+  - **Function**: idk
   - **Output**: `bbox.npy` (bounding box coordinates)
 
 - **TacTic** 
