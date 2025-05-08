@@ -9,7 +9,7 @@ Created on Sat Feb  1 14:27:18 2025
 import numpy as np
 from matplotlib import pyplot as plt
 
-import os
+import os, sys
 import time
 import gc
 
@@ -18,49 +18,54 @@ import supervision as sv
 
 from typing import List
 
-from func_players_batch import func_box
 from func_in_pitch import on_pitch, on_pitch_adaptive
-from Tracker.src.utils.pitch_utils import draw_points_on_pitch, run_radar
-#from track_utils import run_sv_tracker
-from Tracker.src.utils.track_utils import track_in_pitch, box_and_track, ChainTrack, GraphTrack
-from Tracker.src.utils.track_utils import ShowTrackHmm, crop_track
+from pitch_utils import draw_points_on_pitch, run_radar
+from track_utils import run_sv_tracker
+from track_utils import track_in_pitch, box_and_track, ChainTrack, GraphTrack
+from track_utils import ShowTrackHmm, crop_track
 from render_track import plot_tracks
 from team import TeamClassifier, get_crops, create_batches
-#from team import HMMarkov
+from team import HMMarkov
 from team import HMM_missings
 
 # Activer/désactiver les différentes étapes du pipeline
-store_to_keep = False
-do_team_classif = False # take long time
+store_to_keep = True
+do_team_classif = True # take long time
 do_HMMmissings = False
-do_chain_track = False
-do_graph_track = False
-use_adaptive_homography = True  # Nouveau flag pour utiliser l'homographie adaptative
+do_chain_track = True
+do_graph_track = True
+use_adaptive_homography = False  # Nouveau flag pour utiliser l'homographie adaptative
 
 device = 'cuda'
 
-video_in = "basket_short.mp4"
-homog_file = 'pitch/Hs_supt1.npy'
-pitch_file = 'pitch.npy'
-video_track = 'video_clip.mp4'
+path_to_here = os.path.split(os.path.abspath(os.path.realpath(sys.argv[0])))[0]
+video_in = os.getcwd()+"/basket_short.mp4"
+homog_file = path_to_here + '/pitch/Hs_supt1.npy'
+pitch_file = path_to_here + '/pitch.npy'
+video_track = path_to_here + '/video_clip.mp4'
 
 
-boxes_file = 'boxes.npy'
-track_file = 'tracks_clip.npy'
-dict_file = 'clip_dict_4.npy'
+boxes_file = path_to_here + '/boxes.npy'
+track_file = path_to_here + '/tracks_clip.npy'
+dict_file = path_to_here + '/clip_dict_4.npy'
 # Nouveau fichier pour stocker les résultats avec homographie adaptative
-adaptive_dict_file = 'clip_dict_adaptive.npy'
+adaptive_dict_file = path_to_here + '/clip_dict_adaptive.npy'
 
 #pitch = np.load(pitch_file)
 #corners = pitch[[0,1,4,5]].copy()
 #lines = [[0,1], [0,2],[1,2],[2,3]]
 
 if not os.path.exists(boxes_file):
+    from func_players_batch import func_box
     func_box(video_in, boxes_file, start_frame=0, end_frame=0+2000)
 
-#byte_dict = run_sv_tracker(boxes_file)
+track_array = []
+byte_dict = run_sv_tracker(boxes_file)
+for index, bbox in enumerate(byte_dict['bboxes']):
+    track_array.append(np.hstack([bbox, byte_dict['track_ids'][index]]))
+np.save(track_file, track_array)
 
-#box_and_track(boxes_file, track_file, dict_file)
+box_and_track(boxes_file, track_file, dict_file)
 
 # Utiliser l'homographie standard ou adaptative selon le flag
 if os.path.exists(dict_file):
@@ -78,7 +83,7 @@ if os.path.exists(dict_file):
 # Utiliser le fichier approprié pour la suite du traitement
 working_dict_file = adaptive_dict_file if use_adaptive_homography else dict_file
 
-#track_in_pitch(dict_file)
+track_in_pitch(dict_file)
 #starts_ends = StartsEnds(dict_file, pitch_only=True)
 
         
@@ -110,11 +115,17 @@ track_ids = track_ids_[idx_tracks_valid]
 
 vits = []
 unique_track_ids = np.unique(track_ids)
+print(unique_track_ids)
+print(xy_)
+print(inframe_)
 for i_track in unique_track_ids:
     in_track = np.where(track_ids_ == i_track)[0]
-    dxdy = np.gradient(xy_[in_track], inframe_[in_track], axis=0)
-    ds = np.linalg.norm(dxdy, axis=1)
-    vits.append(np.quantile(ds, 0.9)) # / inframe_[in_track].ptp())
+    if len(in_track) > 1:
+        dxdy = np.gradient(xy_[in_track], inframe_[in_track], axis=0)
+        ds = np.linalg.norm(dxdy, axis=1)
+        vits.append(np.quantile(ds, 0.9)) # / inframe_[in_track].ptp())
+    else:
+        vits.append(np.quantile(1, 0.9)) # / inframe_[in_track].ptp())
 vits = np.array(vits)
 
 slow_threshold = 0.14 # with 30 fps
@@ -129,7 +140,9 @@ for i_track in unique_track_ids:
     in_track = np.where(track_ids_ == i_track)
     track_to_keep[in_track] = 1
     
-if store_to_keep: track_dict['to_keep'] = track_to_keep.astype('bool_')
+if store_to_keep: 
+    track_dict['to_keep'] = track_to_keep.astype('bool_')
+    np.save(working_dict_file, track_dict)
 
 
 if do_team_classif:
@@ -196,14 +209,14 @@ if do_team_classif:
     np.save(working_dict_file, track_dict)
 
 ##### first version of hmm (clip_dict_3.npy)
-""""
+
 track_ids_hmm, team_id_hmm = HMMarkov(unique_track_ids, 
                                       track_ids_.copy(), track_dict['team_id'].copy())
 
 track_dict['track_ids_hmm']= track_ids_hmm.copy()
 track_dict['team_id_hmm'] = team_id_hmm.copy()
-np.save(dict_file,track_dict)
-"""
+np.save(working_dict_file,track_dict)
+
 ######### second version of hmm with missings (clip_dict_4.npy)
 if do_HMMmissings:
     track_dict = np.load(working_dict_file, allow_pickle=True).item()
@@ -248,8 +261,6 @@ plt.ylabel('track id'), plt.xlabel('frame number')
 start_chain = 100
 end_chain = 1300
 if do_graph_track:
-
-    
     GraphTrack(working_dict_file, start_chain, end_chain, fps=30, show_tracks=False)
 """
 plot_tracks(source_video_path='basket_short.mp4', dict_file=dict_file,
@@ -262,8 +273,6 @@ bboxes_ = data_dict['bboxes']
 inframe = bboxes_[:,0].astype(np.int16)
 #frames = np.unique(inframe)
 bboxes = bboxes_[:,1:5]
-
-
 
 track_kind = 'graph'
 if track_kind == 'hmm': track_ids = data_dict['track_ids_hmm'].astype(np.int16)

@@ -8,6 +8,7 @@ Created on Sat Feb  1 20:17:55 2025
 
 from typing import Optional
 
+import os
 import cv2
 import supervision as sv
 import numpy as np
@@ -326,7 +327,7 @@ def run_radar_adaptive(source_video_path: str, dict_file: str,
     track_id = track_id[in_track]
     players = players[in_track]
     
-    bh_bboxes_ = np.load("./../../Boxes_Detection/src/data/annotations/ball_handler.npy")
+    bh_bboxes_ = np.load(os.getcwd()+"/Boxes_Detection/src/data/annotations/ball_handler.npy")
     bh_inframe = bh_bboxes_[:,0].astype(np.int16)
     bh_bboxes = bh_bboxes_[:,1:5]
 

@@ -8,7 +8,7 @@ import numpy as np
 import supervision as sv
 import mchmm as mc
 import torch
-import umap
+import umap.umap_ as umap
 
 
 

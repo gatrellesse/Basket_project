@@ -1,10 +1,12 @@
+import os, sys
 import cv2
 from ultralytics import YOLO
 import numpy as np
 
-def func_box_bh(video_name: str, save_box_name: str, start_frame: int, end_frame: int):
+py_path = os.path.split(os.path.abspath(os.path.realpath(sys.argv[0])))[0]
 
-    model = YOLO("./data/weights/ball_handler.pt")
+def func_box_bh(video_name: str, save_box_name: str, start_frame: int, end_frame: int):
+    model = YOLO(f"{py_path}/data/weights/ball_handler.pt")
     bboxes = []
     batch_size = 1
 
@@ -35,4 +37,4 @@ def func_box_bh(video_name: str, save_box_name: str, start_frame: int, end_frame
 
 
 # func_box_bh("./../../basket_short.mp4", "./data/annotations/test.npy", 18, 19)
-func_box_bh("./../../basket_short.mp4", "./data/annotations/ball_handler.npy", 0, 2000)
+func_box_bh("./basket_short.mp4", f"{py_path}/data/annotations/ball_handler.npy", 0, 2000)

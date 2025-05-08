@@ -5,7 +5,7 @@ Created on Mon Feb 10 15:49:57 2025
 
 @author: fenaux
 """
-
+import os
 import numpy as np
 import supervision as sv
 import cv2
@@ -60,7 +60,7 @@ def plot_tracks(source_video_path: str, dict_file: str,
     #frames = np.unique(inframe)
     bboxes = bboxes_[:,1:5]
 
-    bh_bboxes_ = np.load("./../../Boxes_Detection/src/data/annotations/ball_handler.npy")
+    bh_bboxes_ = np.load(os.getcwd()+"/Boxes_Detection/src/data/annotations/ball_handler.npy")
     bh_inframe = bh_bboxes_[:,0].astype(np.int16)
     bh_bboxes = bh_bboxes_[:,1:5]
 
@@ -68,11 +68,12 @@ def plot_tracks(source_video_path: str, dict_file: str,
     elif track_kind == 'chain': track_id = data_dict['track_ids_chain'].astype(np.int16)
     elif track_kind == 'graph': track_id = data_dict['track_ids_graph'].astype(np.int16)
     else: track_id = data_dict['track_ids'].astype(np.int16)
-    
-    to_keep = data_dict['to_keep']
-    inframe = inframe[to_keep]
-    bboxes = bboxes[to_keep]
-    track_id = track_id[to_keep]
+   
+    if 'to_keep' in data_dict:
+        to_keep = data_dict['to_keep']
+        inframe = inframe[to_keep]
+        bboxes = bboxes[to_keep]
+        track_id = track_id[to_keep]
     
     # Vérifier si nous avons des informations sur les détections partielles
     has_partial_info = 'partial_detection_info' in data_dict and show_partial_detections
@@ -83,10 +84,16 @@ def plot_tracks(source_video_path: str, dict_file: str,
         print("Affichage des détections partielles en rouge")
         partial_info = data_dict['partial_detection_info']
         if 'partial_detections' in partial_info:
-            partial_detections = partial_info['partial_detections'][to_keep]
+            if 'to_keep' in data_dict:
+                partial_detections = partial_info['partial_detections'][to_keep]
+            else:
+                partial_detections = partial_info['partial_detections']
         elif 'reference_points' in partial_info:
             # Si nous n'avons pas directement le masque mais que nous avons les points de référence
-            reference_points = partial_info['reference_points'][to_keep]
+            if 'to_keep' in data_dict:
+                reference_points = partial_info['reference_points'][to_keep]
+            else:
+                reference_points = partial_info['reference_points']
             partial_detections = np.zeros_like(track_id, dtype=bool)
             
             # Reconstruire le masque des détections partielles

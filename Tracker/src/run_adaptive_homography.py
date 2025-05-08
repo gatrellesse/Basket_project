@@ -14,14 +14,14 @@ from func_in_pitch import on_pitch, on_pitch_adaptive
 project_root = Path(__file__).resolve().parent.parent.parent
 player_detection_path = str(project_root / "Tracker" / "src" / "utils")
 sys.path.insert(0, player_detection_path)
-from track_utils import track_in_pitch, box_and_track, ChainTrack, GraphTrack
+from track_utils import run_sv_tracker, track_in_pitch, box_and_track, ChainTrack, GraphTrack
 from pitch_utils import run_radar, run_radar_adaptive
 from team import HMM_missings
 from render_track import plot_tracks
 from config import FILE_CONFIG, VISUALIZATION_CONFIG
 from compare_trajectories import add_trajectory_comparison_to_pipeline
 
-store_to_keep = False
+store_to_keep = True
 do_team_classif = False # take long time
 do_HMMmissings = False
 do_chain_track = False
@@ -36,14 +36,17 @@ def run_pipeline(use_adaptive=True, start_from_scratch=False):
         use_adaptive: Utiliser l'homographie adaptative
         start_from_scratch: Recalculer les étapes depuis le début
     """
+    start_from_scratch=True
     # Configuration des fichiers
-    video_in = FILE_CONFIG["video_in"]
-    folder_video_out = Path(FILE_CONFIG["folder_video_out"])
-    homog_file = FILE_CONFIG["homog_file"]
-    boxes_file = FILE_CONFIG["boxes_file"]
-    track_file = FILE_CONFIG["track_file"]
-    dict_file = FILE_CONFIG["dict_file"]
-    adaptive_dict_file = FILE_CONFIG["adaptive_dict_file"]
+    path_to_here = os.path.split(os.path.abspath(os.path.realpath(sys.argv[0])))[0]
+    video_in = os.getcwd() + FILE_CONFIG["video_in"]
+    folder_video_out = Path(os.getcwd() + FILE_CONFIG["folder_video_out"])
+    #homog_file = os.getcwd() + FILE_CONFIG["homog_file"]
+    homog_file = path_to_here + '/pitch/Hs_supt1.npy'
+    boxes_file = os.getcwd() + FILE_CONFIG["boxes_file"]
+    track_file = os.getcwd() + FILE_CONFIG["track_file"]
+    dict_file = os.getcwd() + FILE_CONFIG["dict_file"]
+    adaptive_dict_file = os.getcwd() + FILE_CONFIG["adaptive_dict_file"]
     
     # Fichier de travail (standard ou adaptatif)
     working_dict_file = adaptive_dict_file if use_adaptive else dict_file
@@ -57,6 +60,11 @@ def run_pipeline(use_adaptive=True, start_from_scratch=False):
     # Étape 2: Tracking (si nécessaire)
     if start_from_scratch and (not os.path.exists(dict_file) or not os.path.exists(track_file)):
         print("Tracking des joueurs avec ByteTrack...")
+        track_array = []
+        byte_dict = run_sv_tracker(boxes_file)
+        for index, bbox in enumerate(byte_dict['bboxes']):
+            track_array.append(np.hstack([bbox, byte_dict['track_ids'][index]]))
+        np.save(track_file, track_array)
         box_and_track(boxes_file, track_file, dict_file)
     
     # Étape 3: Homographie (standard ou adaptative)
@@ -85,8 +93,85 @@ def run_pipeline(use_adaptive=True, start_from_scratch=False):
         print("Classification des équipes...")
         # Importer ici pour éviter les conflits
         from team import TeamClassifier, get_crops, create_batches
+        import supervision as sv
+        import time
         # Code pour la classification des équipes...
-        print("Classification des équipes non implémentée dans ce script.")
+        # to initialze classifier we take a strict definition of pitch
+        # in order to exclude coaches or public
+        device = 'cuda'
+
+        track_dict = np.load(working_dict_file, allow_pickle=True).item()
+
+        bboxes_ = track_dict['bboxes']
+        inframe_ = bboxes_[:,0].astype(np.int16)
+        boxes_ = bboxes_[:,1:5]
+        track_ids_ = track_dict['track_ids']
+        unique_track_ids = np.unique(track_ids_)
+        # Utiliser les coordonnées adaptatives si disponibles
+        xy_ = track_dict['xy_adaptive'] if 'xy_adaptive' in track_dict else track_dict['xy']
+        track_ids_ = track_dict['track_ids']
+
+
+
+        is_in_pitch_x = (xy_[:,0] > 0) * (xy_[:,0] < 28)
+        is_in_pitch_y = (xy_[:,1] > 0) * (xy_[:,1] < 15)
+        is_in_pitch = is_in_pitch_x * is_in_pitch_y
+        
+        inframe = inframe_[is_in_pitch]
+        boxes = boxes_[is_in_pitch]
+        
+        stride = 50#100
+        start = 0
+        source_video_path = video_in
+        source = sv.get_video_frames_generator(
+            source_path=source_video_path, start=0, end=0 + 2000, stride=stride)
+        
+        crops = []
+        for i_frame, frame in enumerate(source):
+            
+            in_this_frame = np.where(inframe == i_frame * stride)[0]
+            detections = sv.Detections(xyxy = boxes[in_this_frame])
+            crops += get_crops(frame, detections)
+        
+        t0 = time.time()
+        team_classifier = TeamClassifier(device=device)
+        team_classifier.fit(crops)
+        
+        
+        move_idx = np.hstack([np.where(track_ids_ == track_id)[0] for track_id in unique_track_ids])
+        inframe_move = inframe_[move_idx]
+        boxes_move = boxes_[move_idx]
+        track_ids_move = track_ids_[move_idx]
+        source = sv.get_video_frames_generator(
+            source_path=source_video_path, start=0, end=0 + 2000)
+        
+        crops = []
+        idx_crops = np.array([]).astype(np.int16)
+        boxes_ = np.clip(boxes_, 0, None)
+        player_team_id = np.array([])
+        
+        for i_frame, frame in enumerate(source):
+            in_this_frame = np.where(inframe_ == i_frame)[0]
+            in_this_frame_move = in_this_frame[np.isin(track_ids_[in_this_frame], unique_track_ids)]
+            detections = sv.Detections(xyxy = boxes_[in_this_frame_move])
+            crops += get_crops(frame, detections)
+            idx_crops = np.append(idx_crops, in_this_frame_move)
+            
+            if (i_frame >= 2000) or (len(crops) > 256):
+                new_team_id = team_classifier.predict(crops)
+                player_team_id = np.append(player_team_id, new_team_id)
+                print(i_frame, len(crops))
+                crops = []
+        
+        if len(crops) > 0:
+            new_team_id = team_classifier.predict(crops)
+            player_team_id = np.append(player_team_id, new_team_id)
+        
+        team_id = -np.ones(len(boxes_))
+        team_id[idx_crops] = player_team_id
+        print(time.time() - t0)
+        track_dict['team_id'] = team_id.astype(np.int16)
+        np.save(working_dict_file, track_dict)
     
     # Étape 6: Correction HMM (si activée)
     if do_HMMmissings and start_from_scratch:
