@@ -38,11 +38,23 @@ Variable paths to fix:
 - players.py: PLAYER_DETECTION_MODEL_PATH, video_in, lib input, local_checkpoint
 - all imports
 
-## Requirements
+## Installing Requirements
 
 ```bash
+python3 -m ensurepip --upgrade
+python3 -m venv venv
+source venv/bin/activate
+python3 -m pip install --upgrade pip
 cd Tracker
 git clone https://github.com/meituan/YOLOv6.git
 cd YOLOv6
-pip install -r requirements
+python3 -m pip install -r requirements
+cd ../..
+python3 -m pip install -r requirements
+```
+
+## Running
+
+```bash
+./run_pipeline.sh
 ```

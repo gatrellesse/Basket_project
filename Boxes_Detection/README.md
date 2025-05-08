@@ -32,7 +32,7 @@ python3 utils/par.py
 
 ## Generate ball_handler.npy file
 ```shell script
-python3 src/func_ball_handler.py
+python3 func_ball_handler.py
 ```
 
 ## DatasetTools
