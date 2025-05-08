@@ -60,6 +60,10 @@ def plot_tracks(source_video_path: str, dict_file: str,
     #frames = np.unique(inframe)
     bboxes = bboxes_[:,1:5]
 
+    bh_bboxes_ = np.load("./../../Boxes_Detection/src/data/annotations/ball_handler.npy")
+    bh_inframe = bh_bboxes_[:,0].astype(np.int16)
+    bh_bboxes = bh_bboxes_[:,1:5]
+
     if track_kind == 'hmm': track_id = data_dict['track_ids_hmm'].astype(np.int16)
     elif track_kind == 'chain': track_id = data_dict['track_ids_chain'].astype(np.int16)
     elif track_kind == 'graph': track_id = data_dict['track_ids_graph'].astype(np.int16)
@@ -110,6 +114,16 @@ def plot_tracks(source_video_path: str, dict_file: str,
             i_frame += start  # Ajuster l'index de frame
             
             in_i_frame = np.where(inframe == i_frame)[0]
+            bh_in_i_frame = np.where(bh_inframe == i_frame)[0]
+
+            annotated_frame = frame.copy()
+            bh_detections = sv.Detections(
+                xyxy=bh_bboxes[bh_in_i_frame],
+                class_id = np.zeros(len(bh_bboxes[bh_in_i_frame]), dtype=int)
+            )
+            annotated_frame = BOX_ANNOTATOR_NORMAL.annotate(annotated_frame, bh_detections)
+            annotated_frame = ELLIPSE_LABEL_ANNOTATOR.annotate(annotated_frame, bh_detections, labels=np.array(["ball_handler" for _ in range(len(bh_bboxes[bh_in_i_frame]))]))
+
             if len(in_i_frame) == 0:
                 sink.write_frame(frame)
                 continue

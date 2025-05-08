@@ -1,3 +1,8 @@
 Boxes_Detection/venv/
 Terrain_Detection/venv/
 Tracker/venv/
+venv/
+Boxes_Detection/src/runs/
+Tracker/src/__pycache__/
+Tracker/src/utils/__pycache__/
+basket_short.mp4
