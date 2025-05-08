@@ -36,7 +36,7 @@ def run_pipeline(use_adaptive=True, start_from_scratch=False):
         use_adaptive: Utiliser l'homographie adaptative
         start_from_scratch: Recalculer les étapes depuis le début
     """
-    start_from_scratch=True
+    # start_from_scratch=True
     # Configuration des fichiers
     path_to_here = os.path.split(os.path.abspath(os.path.realpath(sys.argv[0])))[0]
     video_in = os.getcwd() + FILE_CONFIG["video_in"]

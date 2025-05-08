@@ -8,7 +8,7 @@ import time
 import cv2
 import numpy as np
 import torch
-
+import time
 
 class VideoProcessor:
     def __init__(self, config):
@@ -330,6 +330,7 @@ if __name__ == "__main__":
 
     with open(config_path, 'r') as f:
         config = json.load(f)
-
     processor = VideoProcessor(config)
+    start = time.time()
     processor.process_video()
+    print(f"Time to process video: {time.time() - start}")

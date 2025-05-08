@@ -3,6 +3,9 @@
 echo "Getting ball_handler.npy"
 python3 Boxes_Detection/src/func_ball_handler.py
 
+echo "Getting ball.npy"
+python3 Boxes_Detection/src/func_ball.py
+
 echo "Boxes_Detection complete"
 
 echo "Running collinear.py..."

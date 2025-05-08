@@ -170,6 +170,16 @@ ELLIPSE_LABEL_ANNOTATOR = sv.LabelAnnotator(
     text_position=sv.Position.BOTTOM_CENTER,
 )
 
+TOP_ELLIPSE_LABEL_ANNOTATOR = sv.LabelAnnotator(
+    color=sv.ColorPalette.from_hex(COLORS),
+    text_color=sv.Color.from_hex('#FFFFFF'),
+    text_padding=5,
+    text_thickness=1,
+    text_position=sv.Position.TOP_CENTER,
+)
+
+CIRCLE_ANNOTATOR = sv.CircleAnnotator()
+
 def run_radar(source_video_path: str, dict_file: str,
               target_video_path: str,
               start: int = 0, end: int = -1):# -> Iterator[np.ndarray]:
@@ -331,6 +341,11 @@ def run_radar_adaptive(source_video_path: str, dict_file: str,
     bh_inframe = bh_bboxes_[:,0].astype(np.int16)
     bh_bboxes = bh_bboxes_[:,1:5]
 
+    ball_bboxes_ = np.load(os.getcwd()+"/Boxes_Detection/src/data/annotations/ball.npy")
+    ball_inframe = ball_bboxes_[:,0].astype(np.int16)
+    ball_bboxes = ball_bboxes_[:,1:5]
+
+
     video_info = sv.VideoInfo.from_video_path(source_video_path)
     if end == -1:
         end = video_info.total_frames
@@ -355,6 +370,7 @@ def run_radar_adaptive(source_video_path: str, dict_file: str,
         for i_frame, frame in enumerate(source):
             in_i_frame = np.where(inframe == i_frame)[0]
             bh_in_i_frame = np.where(bh_inframe == i_frame)[0]
+            ball_in_i_frame = np.where(ball_inframe == i_frame)[0]
             players_in_frame = players[in_i_frame]
             track_ids_in_frame = track_id[in_i_frame]
             boxes_in_frame = bboxes[in_i_frame]
@@ -451,7 +467,13 @@ def run_radar_adaptive(source_video_path: str, dict_file: str,
                 class_id = np.zeros(len(bh_bboxes[bh_in_i_frame]), dtype=int)
             )
             annotated_frame = BOX_ANNOTATOR.annotate(annotated_frame, bh_detections)
-            annotated_frame = ELLIPSE_LABEL_ANNOTATOR.annotate(annotated_frame, bh_detections, labels=np.array(["ball_handler" for _ in range(len(bh_bboxes[bh_in_i_frame]))]))
+            annotated_frame = TOP_ELLIPSE_LABEL_ANNOTATOR.annotate(annotated_frame, bh_detections, labels=np.array(["ball_handler" for _ in range(len(bh_bboxes[bh_in_i_frame]))]))
+
+            ball_detections = sv.Detections(
+                xyxy=ball_bboxes[ball_in_i_frame],
+                class_id = np.zeros(len(ball_bboxes[ball_in_i_frame]), dtype=int)
+            )
+            annotated_frame = CIRCLE_ANNOTATOR.annotate(annotated_frame, ball_detections)
 
 
             annotated_frame = sv.draw_image(annotated_frame, radar, opacity=0.7, rect=rect)
