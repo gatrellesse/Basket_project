@@ -436,7 +436,7 @@ def run_radar_adaptive(source_video_path: str, dict_file: str,
                         fontFace=cv2.FONT_HERSHEY_SIMPLEX,
                         fontScale=0.4,
                         color=sv.Color.WHITE.as_bgr(),
-                        thickness=1
+                        thickness=2
                     )
             
             # Appliquer le flip vertical pour avoir la bonne orientation

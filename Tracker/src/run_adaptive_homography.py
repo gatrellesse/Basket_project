@@ -22,8 +22,8 @@ from config import FILE_CONFIG, VISUALIZATION_CONFIG
 from compare_trajectories import add_trajectory_comparison_to_pipeline
 
 store_to_keep = True
-do_team_classif = False # take long time
-do_HMMmissings = False
+do_team_classif = True # take long time
+do_HMMmissings = True
 do_chain_track = False
 do_graph_track = False
 use_adaptive_homography = True  # Nouveau flag pour utiliser l'homographie adaptative
