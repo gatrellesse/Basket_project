@@ -6,20 +6,17 @@ Created on Thu Jan 30 17:16:16 2025
 @author: fenaux
 """
 
-#import os, sys
-
-import numpy as np
 from matplotlib import pyplot as plt
-
+from pathlib import Path
+import numpy as np
 import cv2
 import sys
 import time
-
-
 import torch
 
-#from yolov6.utils.events import LOGGER, load_yaml
-sys.path.append("YOLOv6")
+project_root = Path(__file__).resolve().parent.parent  # Goes up from src to Tracker
+yolo_path = str(project_root / "YOLOv6")
+sys.path.insert(0, yolo_path)
 import yolov6 as bid # trick to avoid Key Eroor on second runtime
 from yolov6.layers.common import DetectBackend
 from yolov6.utils.nms import non_max_suppression
@@ -27,9 +24,11 @@ from yolov6.core.inferer import Inferer
 
 from typing import List, Optional
 
-sys.path.append("pour_yolov6")
+# Get the root project directory (Basket_project)
+project_root = Path(__file__).resolve().parent.parent.parent
+player_detection_path = str(project_root / "Tracker" / "src" / "utils")
+sys.path.insert(0, player_detection_path)
 from yolov6_utils import check_img_size, process_image_array
-
 
 
             

@@ -7,12 +7,15 @@ pour évaluer la réduction des trous dus aux occlusions
 
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.colors import LinearSegmentedColormap
 import cv2
-import supervision as sv
 import argparse
 import os
 from tqdm import tqdm
+import sys
+from pathlib import Path
+project_root = Path(__file__).resolve().parent.parent.parent
+player_detection_path = str(project_root / "Tracker" / "src" / "utils")
+sys.path.insert(0, player_detection_path)
 from pitch_utils import draw_pitch
 from config import FILE_CONFIG
 

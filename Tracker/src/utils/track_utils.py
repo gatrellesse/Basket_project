@@ -6,15 +6,15 @@ Created on Thu Feb  6 14:27:47 2025
 @author: fenaux
 """
 
-import numpy as np
-import supervision as sv
-import cv2
-import networkx as nx
-
 from matplotlib import pyplot as plt
 from scipy.spatial import distance
 from itertools import product
 from team import get_crops
+import supervision as sv
+import cv2
+import networkx as nx
+import numpy as np
+
 
 def run_sv_tracker(boxes_file: str) :
     """
@@ -22,7 +22,10 @@ def run_sv_tracker(boxes_file: str) :
 
     Args:
          (str): Path to detections 
+        
+
     """
+    
     bboxes_ = np.load(boxes_file)
     inframe = bboxes_[:,0].astype(np.int16)
     frames = np.unique(inframe)
@@ -68,8 +71,8 @@ def box_and_track(boxes_file:str, track_file:str, dict_file:str, ConfOnly:bool =
         should be set to true for BotSort False for DeepOcSort
         
     dict_file : file where to save results
-        ['bboxes'] like boxes_file with kalmann improvement
-        ['track_ids'] ids from track_file, id is -1 if not in a track
+    ['bboxes'] like boxes_file with kalmann improvement
+    ['track_ids'] ids from track_file, id is -1 if not in a track
     Returns
     -------
     None.
@@ -294,7 +297,7 @@ def GraphTrack(dict_file, start_chain, end_chain, fps=30, show_tracks=False):
     Returns
     -------
     track_ids_graph (array): track_id after tracked have been merged
-
+    
     """
     
     track_dict = np.load(dict_file, allow_pickle=True).item()
@@ -488,7 +491,7 @@ def ShowTrackHmm(dict_file:str, video_in:str, unique_track_ids, stride:int = 4):
             if not do_hmm: continue
             crops = crop_track(track_id, video_in, 
                                track_ids_, boxes_, inframe_,
-                               stride=stride, init_frame=100_001)
+                               stride=stride, init_frame=0)
             old_team = team_id_[in_track][::stride]
             new_team = team_id_hmm[in_track][::stride]
             show_frames = inframe_[in_track][::stride]

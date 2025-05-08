@@ -8,13 +8,17 @@ Permet de vérifier si les détections partielles sont correctement identifiées
 import numpy as np
 import supervision as sv
 import cv2
-import os
 import argparse
+import sys
+from pathlib import Path
+project_root = Path(__file__).resolve().parent.parent.parent
+player_detection_path = str(project_root / "Tracker" / "src" / "utils")
+sys.path.insert(0, player_detection_path)
 from partial_detection_utils import (
     get_adaptive_reference_points,
     detect_partial_boxes
 )
-from config import PARTIAL_DETECTION_CONFIG, VISUALIZATION_CONFIG, FILE_CONFIG
+from config import VISUALIZATION_CONFIG, FILE_CONFIG
 
 def visualize_partial_detections(
     video_path: str,

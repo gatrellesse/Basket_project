@@ -6,20 +6,19 @@ Created on Sat Feb  1 20:17:55 2025
 @author: fenaux
 """
 
-from dataclasses import dataclass, field
-from typing import List, Tuple, Optional
+from typing import Optional
 
 import cv2
 import supervision as sv
 import numpy as np
-from matplotlib import pyplot as plt
 
 def draw_pitch(
     background_color: sv.Color = sv.Color(34, 139, 34),
     line_color: sv.Color = sv.Color.WHITE,
     padding: int = 50,
     line_thickness: int = 4,
-    scale: float = 40) -> np.ndarray:       
+    scale: float = 40
+) -> np.ndarray:       
 
     vertices = [(0,0), (0,15), (14,0), (14,15), (28,0), (28,15),
                 (0, 7.5 - 2.45), (0, 7.5 + 2.45),
@@ -96,7 +95,8 @@ def draw_points_on_pitch(
     thickness: int = 2,
     padding: int = 50,
     scale: float = 40,
-    pitch: Optional[np.ndarray] = None) -> np.ndarray:
+    pitch: Optional[np.ndarray] = None
+) -> np.ndarray:
     """
     Draws points on a soccer pitch.
 
@@ -128,26 +128,26 @@ def draw_points_on_pitch(
             padding=padding,
             scale=scale
         )
-
-    for point in xy:
-        scaled_point = (
-            int(point[0] * scale) + padding,
-            int(point[1] * scale) + padding
-        )
-        cv2.circle(
-            img=pitch,
-            center=scaled_point,
-            radius=radius,
-            color=face_color.as_bgr(),
-            thickness=-1
-        )
-        cv2.circle(
-            img=pitch,
-            center=scaled_point,
-            radius=radius,
-            color=edge_color.as_bgr(),
-            thickness=thickness
-        )
+    if len(xy) != 0:
+        for point in xy:
+            scaled_point = (
+                int(point[0] * scale) + padding,
+                int(point[1] * scale) + padding
+            )
+            cv2.circle(
+                img=pitch,
+                center=scaled_point,
+                radius=radius,
+                color=face_color.as_bgr(),
+                thickness=-1
+            )
+            cv2.circle(
+                img=pitch,
+                center=scaled_point,
+                radius=radius,
+                color=edge_color.as_bgr(),
+                thickness=thickness
+            )
 
     return np.flipud(pitch)
 
@@ -199,7 +199,63 @@ def run_radar(source_video_path: str, dict_file: str,
         for i_frame, frame in enumerate(source):
             in_i_frame = np.where(inframe== i_frame)[0]
             players_in_frame = players[in_i_frame]
-            boxes_in_frame = bboxes[in_i_frame]
+            # boxes_in_frame = bboxes[in_i_frame]
+            
+            """
+            detections_in = sv.Detections(xyxy = boxes_in_frame[are_in_pitch_frame],
+                                          class_id=np.zeros(are_in_pitch_frame.sum()))
+            detections_out = sv.Detections(xyxy = boxes_in_frame[are_out_pitch_frame],
+                                           class_id=np.zeros(are_out_pitch_frame.sum()))
+            
+            annotated_frame = frame.copy()
+            annotated_frame = ELLIPSE_ANNOTATOR.annotate(
+                annotated_frame, detections_in)
+            annotated_frame = BOX_ANNOTATOR.annotate(
+                annotated_frame, detections_out)"""
+    
+            radar = draw_points_on_pitch(players_in_frame)
+            
+            h, w, _ = frame.shape
+            radar = sv.resize_image(radar, (w // 2, h // 2))
+            radar_h, radar_w, _ = radar.shape
+            rect = sv.Rect(
+                x=w // 2 - radar_w // 2,
+                y=h - radar_h,
+                width=radar_w,
+                height=radar_h
+            )
+            annotated_frame = frame.copy()
+            annotated_frame = sv.draw_image(annotated_frame, radar, opacity=0.5, rect=rect)
+            sink.write_frame(annotated_frame)
+            
+def traj_radar(source_video_path: str, traj_file: str,
+              target_video_path: str,
+              start: int = 0, end: int = -1):# -> Iterator[np.ndarray]:
+    
+    """data_dict = np.load(dict_file, allow_pickle=True).item()
+    bboxes_ = data_dict['bboxes']
+    inframe = bboxes_[:,0].astype(np.int16) 
+    track_id = data_dict['track_ids'].astype(np.int16)"""
+    
+    traj_dict = np.load(traj_file, allow_pickle=True).item()
+    # traj_ids = traj_dict['ids'] # list of track ids
+    fxys = traj_dict['xy'] # list of arrays coordinates
+    
+    video_info = sv.VideoInfo.from_video_path(source_video_path)
+    if end == -1:
+        end = video_info.total_frames
+    source = sv.get_video_frames_generator(
+        source_path=source_video_path, start=start, end=end)
+    
+   
+    with sv.VideoSink(target_video_path, video_info) as sink:
+        for i_frame, frame in enumerate(source):
+            players_in_frame = []
+            for fxy in fxys:
+                coords_in_frame = fxy[np.where(fxy[:,0] == i_frame)[0],1:]
+                if coords_in_frame.size > 0:  players_in_frame.append(coords_in_frame)
+               
+            players_in_frame = np.array(players_in_frame).reshape(-1,2)
             
             """
             detections_in = sv.Detections(xyxy = boxes_in_frame[are_in_pitch_frame],
@@ -228,75 +284,156 @@ def run_radar(source_video_path: str, dict_file: str,
             annotated_frame = sv.draw_image(annotated_frame, radar, opacity=0.5, rect=rect)
             sink.write_frame(annotated_frame)
 
-
-def in_pitch(boxes_file, homog_file, boxes_pitch_file):
-    Hs = np.load(homog_file)
-    # Hs[i,0] src_pts reference image dst_pts image i
-    # Hs[i,1] src_pts grd dst_pts image i
-    # Hs[i,2] src_pts image i dst_pts ground
-    
-    bboxes = np.load(boxes_file)
-    inframe = bboxes[:,0].astype(np.int16)
-    frames = np.unique(inframe)
-    bboxes = bboxes[:,1:5]
-    players = np.column_stack((bboxes[:,[0,2]].mean(axis=1), bboxes[:,3])) # middle of bottom
-    
-    homogs = Hs[:,2]
-    
-    all_in_pitch = np.array([])
-    xy_players = []
-    for i_frame in frames:
-        
-        in_i_frame = np.where(inframe== i_frame)[0]
-        players_in_frame = players[in_i_frame]
-        M = homogs[i_frame]
-        players_grdframe = cv2.perspectiveTransform(players_in_frame.reshape(-1,1,2), M).squeeze()
-        in_pitch_x = (players_grdframe[:,0] > -0.5) * (players_grdframe[:,0] < 28.5)
-        in_pitch_y = (players_grdframe[:,1] > -0.5) * (players_grdframe[:,1] < 15.5)
-        in_pitch = in_pitch_x * in_pitch_y
-        
-        """
-        if i_frame%50 == 0:
-            plt.scatter(corners[:,0], corners[:,1], s=1)
-            plt.scatter(players_grdframe[in_pitch,0], players_grdframe[in_pitch,1], s=0.5)
-            plt.title(f"{i_frame}")
-            plt.show()
-        
-        if i_frame > 500: break"""
-        
-        all_in_pitch = np.append(all_in_pitch, in_pitch.astype(np.int16))
-        if len(xy_players) == 0: xy_players = players_grdframe.copy()
-        else: xy_players = np.vstack((xy_players, players_grdframe))
-    
-    
-    bboxes_pitch = np.column_stack((inframe, bboxes, all_in_pitch, xy_players))
-    np.save(boxes_pitch_file ,bboxes_pitch)
-    
-def on_pitch(dict_file:str, homog_file:str):
-    Hs = np.load(homog_file)
-    # Hs[i,0] src_pts reference image dst_pts image i
-    # Hs[i,1] src_pts grd dst_pts image i
-    # Hs[i,2] src_pts image i dst_pts ground
-    
+def run_radar_adaptive(source_video_path: str, dict_file: str,
+              target_video_path: str,
+              start: int = 0, end: int = -1):# -> Iterator[np.ndarray]:
+    """
+    Version du radar utilisant les coordonnées adaptatives pour une meilleure
+    continuité des trajectoires pendant les occlusions partielles.
+    """
     data_dict = np.load(dict_file, allow_pickle=True).item()
-    bboxes = data_dict['bboxes']
-    inframe = bboxes[:,0].astype(np.int16)
-    frames = np.unique(inframe)
-    bboxes = bboxes[:,1:5]
-    players = np.column_stack((bboxes[:,[0,2]].mean(axis=1), bboxes[:,3])) # middle of bottom
+    bboxes_ = data_dict['bboxes']
+    inframe = bboxes_[:,0].astype(np.int16)
+    bboxes = bboxes_[:,1:5]
+    in_pitch = data_dict['in_pitch'].astype(np.bool_)
+    track_id = data_dict['track_ids'].astype(np.int16)
     
-    homogs = Hs[:,2]
+    # Utiliser les coordonnées adaptatives si disponibles
+    if 'xy_adaptive' in data_dict:
+        print("Utilisation des coordonnées adaptatives pour le radar")
+        players = data_dict['xy_adaptive'].astype(np.int16)
+    else:
+        print("Coordonnées adaptatives non disponibles, utilisation des coordonnées standard")
+        players = data_dict['xy'].astype(np.int16)
     
-    xy_players = []
-    for i_frame in frames:
-        
-        in_i_frame = np.where(inframe== i_frame)[0]
-        players_in_frame = players[in_i_frame]
-        M = homogs[i_frame]
-        players_grdframe = cv2.perspectiveTransform(players_in_frame.reshape(-1,1,2), M).squeeze()
-
-        if len(xy_players) == 0: xy_players = players_grdframe.copy()
-        else: xy_players = np.vstack((xy_players, players_grdframe))
+    inframe = inframe[in_pitch]
+    bboxes = bboxes[in_pitch]
+    track_id = track_id[in_pitch]
+    players = players[in_pitch]
     
-    data_dict['xy'] = xy_players.copy()
-    np.save(dict_file, data_dict)
+    in_track = (track_id > -1)
+    inframe = inframe[in_track]
+    bboxes = bboxes[in_track]
+    track_id = track_id[in_track]
+    players = players[in_track]
+    
+    video_info = sv.VideoInfo.from_video_path(source_video_path)
+    if end == -1:
+        end = video_info.total_frames
+    source = sv.get_video_frames_generator(
+        source_path=source_video_path, start=start, end=end)
+    
+    # Dictionnaire pour stocker les positions précédentes par ID
+    # prev_positions = {}
+    
+    # Paramètres pour les traces
+    trace_length = 30  # Nombre de frames pour conserver la trace
+    team_colors = {
+        0: sv.Color.BLUE,  # Équipe 1
+        1: sv.Color.RED,   # Équipe 2
+        2: sv.Color.GREEN  # Arbitre ou autre
+    }
+    
+    # Historique des positions
+    position_history = {track_id: [] for track_id in np.unique(track_id)}
+    
+    with sv.VideoSink(target_video_path, video_info) as sink:
+        for i_frame, frame in enumerate(source):
+            in_i_frame = np.where(inframe == i_frame)[0]
+            players_in_frame = players[in_i_frame]
+            track_ids_in_frame = track_id[in_i_frame]
+            
+            # Associer chaque position à son ID et mettre à jour l'historique
+            for pos, tid in zip(players_in_frame, track_ids_in_frame):
+                if tid > 0:  # Ignorer les IDs négatifs
+                    position_history[tid].append((i_frame, pos))
+                    # Garder seulement les N dernières positions
+                    if len(position_history[tid]) > trace_length:
+                        position_history[tid].pop(0)
+            
+            # Radar de base avec les positions actuelles
+            radar = draw_pitch()
+            
+            # Dessiner les traces pour chaque joueur
+            for tid in position_history:
+                history = position_history[tid]
+                if not history:
+                    continue
+                
+                # Déterminer la couleur (utiliser l'ID modulo 3 pour simplifier)
+                color = team_colors.get(tid % 3, sv.Color.YELLOW)
+                
+                # Dessiner les points de l'historique avec opacité croissante
+                points = [pos for _, pos in history if _ <= i_frame]
+                if len(points) > 1:
+                    # Dessiner les lignes entre les points
+                    points_array = np.array(points)
+                    for j in range(1, len(points_array)):
+                        alpha = 0.3 + 0.7 * (j / len(points_array))  # Opacité croissante
+                        pt1 = (int(points_array[j-1][0] * 40) + 50, int(points_array[j-1][1] * 40) + 50)
+                        pt2 = (int(points_array[j][0] * 40) + 50, int(points_array[j][1] * 40) + 50)
+                        cv2.line(radar, pt1, pt2, (*color.as_bgr(), int(255 * alpha)), 2)
+                
+                # Dessiner le point actuel
+                if history[-1][0] <= i_frame:
+                    current_pos = history[-1][1]
+                    scaled_point = (
+                        int(current_pos[0] * 40) + 50,
+                        int(current_pos[1] * 40) + 50
+                    )
+                    cv2.circle(
+                        img=radar,
+                        center=scaled_point,
+                        radius=8,
+                        color=color.as_bgr(),
+                        thickness=-1
+                    )
+                    cv2.circle(
+                        img=radar,
+                        center=scaled_point,
+                        radius=8,
+                        color=sv.Color.BLACK.as_bgr(),
+                        thickness=2
+                    )
+                    
+                    # Ajouter le numéro du joueur
+                    cv2.putText(
+                        img=radar,
+                        text=str(tid),
+                        org=(scaled_point[0] - 4, scaled_point[1] + 4),
+                        fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                        fontScale=0.4,
+                        color=sv.Color.WHITE.as_bgr(),
+                        thickness=1
+                    )
+            
+            # Appliquer le flip vertical pour avoir la bonne orientation
+            radar = np.flipud(radar)
+            
+            # Redimensionner et intégrer le radar dans la frame
+            h, w, _ = frame.shape
+            radar = sv.resize_image(radar, (w // 2, h // 2))
+            radar_h, radar_w, _ = radar.shape
+            rect = sv.Rect(
+                x=w // 2 - radar_w // 2,
+                y=h - radar_h,
+                width=radar_w,
+                height=radar_h
+            )
+            annotated_frame = frame.copy()
+            annotated_frame = sv.draw_image(annotated_frame, radar, opacity=0.7, rect=rect)
+            
+            # Ajouter le numéro de frame
+            cv2.putText(
+                img=annotated_frame,
+                text=f"Frame: {i_frame}",
+                org=(20, 30),
+                fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                fontScale=1.0,
+                color=(0, 255, 0),
+                thickness=2
+            )
+            
+            sink.write_frame(annotated_frame)
+    
+    print(f"Radar adaptatif généré: {target_video_path}")

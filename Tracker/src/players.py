@@ -12,7 +12,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 import cv2
-import os, sys
+import sys
 import time
 """
 from typing import Iterator, List
@@ -26,15 +26,19 @@ import torchvision.transforms.functional as TF
 
 import supervision as sv
 #from yolov6.utils.events import LOGGER, load_yaml
-sys.path.append("YOLOv6")
+project_root = Path(__file__).resolve().parent.parent  # Goes up from src to Tracker
+yolo_path = str(project_root / "Tracker" / "src" / "YOLOv6")
+sys.path.insert(0, yolo_path)
 import yolov6 as bid # trick to avoid Key Eroor on second runtime
 from yolov6.layers.common import DetectBackend
 from yolov6.utils.nms import non_max_suppression
 from yolov6.core.inferer import Inferer
-
+from pathlib import Path
 from typing import List, Optional
 
-sys.path.append("pour_yolov6")
+project_root = Path(__file__).resolve().parent.parent.parent
+player_detection_path = str(project_root / "Boxes_Detection" / "src" / "utils")
+sys.path.insert(0, player_detection_path)
 from yolov6_utils import check_img_size, process_image_array
 
 video_in = "basket_short.mp4"
@@ -217,5 +221,3 @@ def func_box(video_name: str, save_box_name: str, start_frame: int, end_frame: i
     np.save(save_box_name, bboxes)
     
     return
-
-func_box(video_in, 'boxes.npy', start_frame=0, end_frame=0+2000)

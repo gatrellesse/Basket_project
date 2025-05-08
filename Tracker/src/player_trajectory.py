@@ -6,10 +6,12 @@ Analyse des trajectoires d'un joueur spécifique pour identifier les trous dus a
 
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.colors import LinearSegmentedColormap
 import cv2
-import supervision as sv
 import argparse
+from pathlib import Path
+project_root = Path(__file__).resolve().parent.parent.parent
+player_detection_path = str(project_root / "Tracker" / "src" / "utils")
+sys.path.insert(0, player_detection_path)
 from pitch_utils import draw_pitch
 
 def analyze_player_trajectory(dict_file, player_id=1, output_file=None, show_plot=True):
@@ -50,7 +52,7 @@ def analyze_player_trajectory(dict_file, player_id=1, output_file=None, show_plo
     
     # Utiliser un dégradé de couleurs pour montrer la progression temporelle
     n_points = len(player_positions)
-    colors = plt.cm.viridis(np.linspace(0, 1, n_points))
+    #colors = plt.cm.viridis(np.linspace(0, 1, n_points))
     
     # Tracer la trajectoire avec le dégradé de couleurs
     ax1.scatter(player_positions[:, 0] * 40 + 50, player_positions[:, 1] * 40 + 50, 
@@ -128,7 +130,6 @@ def generate_all_player_trajectories(dict_file, output_dir='.'):
     (ceux ayant plus d'un certain nombre de détections)
     """
     import os
-    from tqdm import tqdm
     
     data_dict = np.load(dict_file, allow_pickle=True).item()
     track_ids = data_dict['track_ids_graph'].astype(np.int16)

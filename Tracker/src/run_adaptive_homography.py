@@ -8,15 +8,25 @@ et comparer les résultats avec la méthode standard.
 import os
 import numpy as np
 import argparse
-import time
+import sys
+from pathlib import Path
 from func_in_pitch import on_pitch, on_pitch_adaptive
-from tactic_main import store_to_keep, do_team_classif, do_HMMmissings, do_chain_track, do_graph_track
+project_root = Path(__file__).resolve().parent.parent.parent
+player_detection_path = str(project_root / "Tracker" / "src" / "utils")
+sys.path.insert(0, player_detection_path)
 from track_utils import track_in_pitch, box_and_track, ChainTrack, GraphTrack
+from pitch_utils import run_radar, run_radar_adaptive
 from team import HMM_missings
 from render_track import plot_tracks
-from pitch_utils import run_radar, run_radar_adaptive
 from config import FILE_CONFIG, VISUALIZATION_CONFIG
 from compare_trajectories import add_trajectory_comparison_to_pipeline
+
+store_to_keep = False
+do_team_classif = False # take long time
+do_HMMmissings = False
+do_chain_track = False
+do_graph_track = False
+use_adaptive_homography = True  # Nouveau flag pour utiliser l'homographie adaptative
 
 def run_pipeline(use_adaptive=True, start_from_scratch=False):
     """
@@ -28,8 +38,8 @@ def run_pipeline(use_adaptive=True, start_from_scratch=False):
     """
     # Configuration des fichiers
     video_in = FILE_CONFIG["video_in"]
+    folder_video_out = Path(FILE_CONFIG["folder_video_out"])
     homog_file = FILE_CONFIG["homog_file"]
-    pitch_file = FILE_CONFIG["pitch_file"]
     boxes_file = FILE_CONFIG["boxes_file"]
     track_file = FILE_CONFIG["track_file"]
     dict_file = FILE_CONFIG["dict_file"]
@@ -119,8 +129,10 @@ def run_pipeline(use_adaptive=True, start_from_scratch=False):
     
     # Visualisation du tracking
     track_kind = 'graph' if 'track_ids_graph' in np.load(working_dict_file, allow_pickle=True).item() else None
+    file_name = f"visualisation_{method_name}_{track_kind}.mp4"
+    file_path = folder_video_out / file_name
     plot_tracks(source_video_path=video_in, dict_file=working_dict_file,
-               target_video_path=f'visualisation_{method_name}_{track_kind}.mp4', 
+               target_video_path= file_path, 
                track_kind=track_kind, start=0, end=-1)
     
     # Configuration de visualisation
@@ -128,19 +140,25 @@ def run_pipeline(use_adaptive=True, start_from_scratch=False):
     end_frame = VISUALIZATION_CONFIG["end_frame"]
     
     # Visualisation radar standard
-    run_radar(video_in, working_dict_file, f'radar_{method_name}.mp4', start=start_frame, end=end_frame)
+    file_name = f"radar_{method_name}.mp4"
+    file_path = folder_video_out / file_name
+    run_radar(video_in, working_dict_file, file_path, start=start_frame, end=end_frame)
     
     # Visualisation radar avec traces (uniquement pour les méthodes adaptatives)
     if use_adaptive:
         print("Génération du radar avec traces...")
-        run_radar_adaptive(video_in, working_dict_file, f'radar_{method_name}_traces.mp4', start=start_frame, end=end_frame)
+        file_name = f"radar_{method_name}_traces.mp4"
+        file_path = folder_video_out / file_name
+        run_radar_adaptive(video_in, working_dict_file, file_path, start=start_frame, end=end_frame)
     
     # Visualisation des détections partielles
     from visualize_partial_detections import visualize_partial_detections
+    file_name = f"partial_detections_{method_name}.mp4"
+    file_path = folder_video_out / file_name
     visualize_partial_detections(
         video_in, 
         working_dict_file,
-        f'partial_detections_{method_name}.mp4',
+        file_path,
         start_frame=start_frame,
         end_frame=end_frame
     )

@@ -25,13 +25,13 @@ PARTIAL_DETECTION_CONFIG = {
 
 # Configuration des fichiers (peut être modifiée en fonction des besoins)
 FILE_CONFIG = {
-    "video_in": "basket_short.mp4",
-    "homog_file": "pitch/Hs_supt1.npy",
-    "pitch_file": "pitch.npy",
-    "boxes_file": "boxes.npy",
-    "track_file": "tracks_clip.npy",
-    "dict_file": "clip_dict_4.npy",
-    "adaptive_dict_file": "clip_dict_adaptive.npy"
+    "homog_file": "../../Terrain_Detection/src/data/annotations/Hs_supt1.npy",
+    "boxes_file": "../../Boxes_Detection/src/data/annotations/boxes.npy",
+    "video_in": "../src/data/videos/basket_short.mp4",
+    "folder_video_out": "../src/data/videos",
+    "track_file": "../src/data/annotations/tracks_clip.npy",
+    "dict_file": "../src/data/annotations/clip_dict_4.npy",
+    "adaptive_dict_file": "../src/data/annotations/clip_dict_adaptive.npy"
 }
 
 # Configuration de la visualisation

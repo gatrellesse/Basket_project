@@ -7,4 +7,4 @@ run_terrain:
 
 run_tracker:
 	@echo "Running tracker "
-	python3 main.py
+	python3 run_adaptive_homography.py

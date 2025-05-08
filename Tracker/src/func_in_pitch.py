@@ -7,24 +7,13 @@ Created on Sat Feb  1 17:13:41 2025
 """
 
 import numpy as np
-from matplotlib import pyplot as plt
-
 import cv2
-from partial_detection_utils import get_adaptive_reference_points, get_improved_adaptive_reference_points
-from config import PARTIAL_DETECTION_CONFIG
-
-
-
-
-#video_in = "../ffb/CFBB vs UNION TARBES LOURDES PYRENEES BASKET Men's Pro Basketball - Tactical.mp4"
-#homog_file = '../pitch/Hs_supt1.npy'
-#pitch_file = '../pitch/pitch.npy'
-
-#boxes_file = 'boxes.npy'
-
-#pitch = np.load(pitch_file)
-#corners = pitch[[0,1,4,5]].copy()
-#lines = [[0,1], [0,2],[1,2],[2,3]]
+import sys
+from pathlib import Path
+project_root = Path(__file__).resolve().parent.parent.parent
+player_detection_path = str(project_root / "Tracker" / "src" / "utils")
+sys.path.insert(0, player_detection_path)
+from partial_detection_utils import get_adaptive_reference_points
 
 
 def in_pitch(boxes_file, homog_file, boxes_pitch_file):

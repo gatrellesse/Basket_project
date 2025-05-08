@@ -10,7 +10,6 @@ import numpy as np
 import supervision as sv
 import cv2
 
-from matplotlib import pyplot as plt
 
 COLORS = ['#FF1493', '#00BFFF', '#FF6347', '#FFD700']
 

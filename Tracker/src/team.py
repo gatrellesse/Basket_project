@@ -1,16 +1,16 @@
+
 from typing import Generator, Iterable, List, TypeVar
-
-import numpy as np
-from matplotlib import pyplot as plt
-
-import supervision as sv
-import torch
-import umap
 from sklearn.cluster import KMeans
 from tqdm import tqdm
 from transformers import AutoProcessor, SiglipVisionModel
-
+from matplotlib import pyplot as plt
+import numpy as np
+import supervision as sv
 import mchmm as mc
+import torch
+import umap
+
+
 
 V = TypeVar("V")
 

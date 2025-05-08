@@ -20,10 +20,10 @@ from typing import List
 
 from func_players_batch import func_box
 from func_in_pitch import on_pitch, on_pitch_adaptive
-from pitch_utils import draw_points_on_pitch, run_radar
+from Tracker.src.utils.pitch_utils import draw_points_on_pitch, run_radar
 #from track_utils import run_sv_tracker
-from track_utils import track_in_pitch, box_and_track, ChainTrack, GraphTrack
-from track_utils import ShowTrackHmm, crop_track
+from Tracker.src.utils.track_utils import track_in_pitch, box_and_track, ChainTrack, GraphTrack
+from Tracker.src.utils.track_utils import ShowTrackHmm, crop_track
 from render_track import plot_tracks
 from team import TeamClassifier, get_crops, create_batches
 #from team import HMMarkov
@@ -372,6 +372,7 @@ complete_track_dict['ids'] = complete_traj
 complete_track_dict['xy'] = xy_preds
 
 # Sauvegarder les trajectoires complètes avec le préfixe correspondant à l'homographie utilisée
+print("saved")
 np.save(f"complete_tracks_{'adaptive' if use_adaptive_homography else 'standard'}.npy", complete_track_dict)
 
 
