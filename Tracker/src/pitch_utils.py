@@ -162,6 +162,16 @@ ELLIPSE_ANNOTATOR = sv.EllipseAnnotator(
     thickness=2
 )
 
+COLORS = ['#FF1493', '#00BFFF', '#FF6347', '#FFD700']
+
+ELLIPSE_LABEL_ANNOTATOR = sv.LabelAnnotator(
+    color=sv.ColorPalette.from_hex(COLORS),
+    text_color=sv.Color.from_hex('#FFFFFF'),
+    text_padding=5,
+    text_thickness=1,
+    text_position=sv.Position.BOTTOM_CENTER,
+)
+
 def run_radar(source_video_path: str, dict_file: str,
               target_video_path: str,
               start: int = 0, end: int = -1):# -> Iterator[np.ndarray]:
@@ -318,7 +328,11 @@ def run_radar_adaptive(source_video_path: str, dict_file: str,
     bboxes = bboxes[in_track]
     track_id = track_id[in_track]
     players = players[in_track]
-    
+   
+    bh_bboxes_ = np.load("./../../Boxes_Detection/src/data/annotations/ball_handler.npy")
+    bh_inframe = bh_bboxes_[:,0].astype(np.int16)
+    bh_bboxes = bh_bboxes_[:,1:5]
+
     video_info = sv.VideoInfo.from_video_path(source_video_path)
     if end == -1:
         end = video_info.total_frames
@@ -342,8 +356,11 @@ def run_radar_adaptive(source_video_path: str, dict_file: str,
     with sv.VideoSink(target_video_path, video_info) as sink:
         for i_frame, frame in enumerate(source):
             in_i_frame = np.where(inframe == i_frame)[0]
+            bh_in_i_frame = np.where(bh_inframe == i_frame)[0]
+
             players_in_frame = players[in_i_frame]
             track_ids_in_frame = track_id[in_i_frame]
+            boxes_in_frame = bboxes[in_i_frame]
             
             # Associer chaque position à son ID et mettre à jour l'historique
             for pos, tid in zip(players_in_frame, track_ids_in_frame):
@@ -423,6 +440,22 @@ def run_radar_adaptive(source_video_path: str, dict_file: str,
                 height=radar_h
             )
             annotated_frame = frame.copy()
+
+            detections = sv.Detections(
+                xyxy=boxes_in_frame,
+                class_id=track_ids_in_frame
+            )
+            labels = [str(tid) for tid in track_ids_in_frame]
+            annotated_frame = ELLIPSE_ANNOTATOR.annotate(annotated_frame, detections)
+            annotated_frame = ELLIPSE_LABEL_ANNOTATOR.annotate(annotated_frame, detections, labels=labels)
+
+            bh_detections = sv.Detections(
+                xyxy=bh_bboxes[bh_in_i_frame],
+                class_id = np.zeros(len(bh_bboxes[bh_in_i_frame]), dtype=int)
+            )
+            annotated_frame = BOX_ANNOTATOR.annotate(annotated_frame, bh_detections)
+            annotated_frame = ELLIPSE_LABEL_ANNOTATOR.annotate(annotated_frame, bh_detections, labels=np.array(["ball_handler" for _ in range(len(bh_bboxes[bh_in_i_frame]))]))
+
             annotated_frame = sv.draw_image(annotated_frame, radar, opacity=0.7, rect=rect)
             
             # Ajouter le numéro de frame

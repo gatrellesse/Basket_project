@@ -18,7 +18,6 @@ import supervision as sv
 
 from typing import List
 
-from func_players_batch import func_box
 from func_in_pitch import on_pitch, on_pitch_adaptive
 from pitch_utils import draw_points_on_pitch, run_radar
 #from track_utils import run_sv_tracker
@@ -56,6 +55,7 @@ adaptive_dict_file = 'clip_dict_adaptive.npy'
 #lines = [[0,1], [0,2],[1,2],[2,3]]
 
 if not os.path.exists(boxes_file):
+    from func_players_batch import func_box
     func_box(video_in, boxes_file, start_frame=0, end_frame=0+2000)
 
 #byte_dict = run_sv_tracker(boxes_file)
